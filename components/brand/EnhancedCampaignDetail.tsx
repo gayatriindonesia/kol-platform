@@ -53,57 +53,35 @@ const EnhancedCampaignDetail: React.FC<EnhancedCampaignDetailProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Mock data untuk demonstrasi
-  const mockCampaign: Campaign = {
-    id: campaignId,
-    name: 'Summer Fashion Campaign 2024',
-    status: 'active',
-    startDate: '2024-06-01T00:00:00Z',
-    endDate: '2024-08-31T23:59:59Z',
-    updatedAt: '2024-07-15T10:30:00Z',
-    type: 'display',
-    description: 'Kampanye musim panas untuk koleksi fashion terbaru dengan target audience generasi milenial dan Gen Z.',
-    budget: 50000000,
-    currency: 'IDR',
-    targetAudience: 'Women 18-35, Fashion Enthusiasts',
-    platform: 'Google Ads',
-    createdBy: 'Marketing Team',
-    brandId: 'brand-123',
-    tags: ['summer', 'fashion', 'youth', 'trendy'],
-    metrics: {
-      impressions: 2500000,
-      clicks: 125000,
-      conversions: 2500,
-      ctr: 5.0,
-      cpm: 20000,
-      cpc: 400
-    }
-  };
-
+  
   useEffect(() => {
     fetchCampaignDetail();
   }, [campaignId]);
 
   const fetchCampaignDetail = async () => {
     try {
-      setLoading(true);
-      setError(null);
-      
-      // Simulasi API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Dalam implementasi nyata, ganti dengan API call
-      const response = await fetch(`/api/${campaignId}/status`);
-        const data = await response.json();
-      
-      setCampaign(mockCampaign);
-    } catch (err) {
-      setError('Failed to load campaign details');
-      console.error('Error fetching campaign:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    setLoading(true);
+    setError(null);
+
+    const response = await fetch(`/api/campaigns/${campaignId}/status`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (!response.ok) throw new Error('Failed to fetch campaign');
+
+    const data = await response.json();
+
+    if (!data || !data.campaign) throw new Error('Invalid campaign data');
+
+    setCampaign(data.campaign);
+  } catch (err) {
+    setError('Failed to load campaign details');
+    console.error('Error fetching campaign:', err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleRefresh = async () => {
     setRefreshing(true);

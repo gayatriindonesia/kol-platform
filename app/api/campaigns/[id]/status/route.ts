@@ -10,7 +10,7 @@ interface RouteParams {
     };
 }
 
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(_req: NextRequest, { params }: RouteParams) {
     try {
         const session = await auth();
         
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 }
 
 // Endpoint untuk batch update semua campaign yang expired
-export async function PUT(request: NextRequest) {
+export async function PUT() {
     try {
         const session = await auth();
         
@@ -159,7 +159,7 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function PATCH(
-  request: NextRequest,
+  _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {

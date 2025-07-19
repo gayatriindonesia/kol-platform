@@ -34,7 +34,7 @@ async function safeJsonParse(response: Response) {
   const text = await response.text();
   try {
     return JSON.parse(text);
-  } catch (error) {
+  } catch {
     console.error('Failed to parse JSON:', text);
     throw new Error(`Invalid JSON response: ${text.substring(0, 200)}...`);
   }
@@ -181,7 +181,7 @@ async function fetchTikTokVideos(accessToken: string, cursor?: string) {
       // If endpoint is not available, try alternative
       if (response.status === 404) {
         console.log('🔄 Trying alternative video fetch method...');
-        return await fetchTikTokVideosAlternative(accessToken, cursor);
+        return await fetchTikTokVideosAlternative(accessToken);
       }
       
       return { success: false, error: `HTTP ${response.status}: ${errorText}` };
@@ -204,7 +204,7 @@ async function fetchTikTokVideos(accessToken: string, cursor?: string) {
 }
 
 // Alternative method for fetch videos if main endpoint is not available
-async function fetchTikTokVideosAlternative(accessToken: string, cursor?: string) {
+async function fetchTikTokVideosAlternative(accessToken: string) {
   try {
     console.log('🔄 Using alternative video fetch method...');
     
@@ -223,8 +223,6 @@ async function fetchTikTokVideosAlternative(accessToken: string, cursor?: string
     if (!response.ok) {
       return { success: false, error: 'Alternative method also failed' };
     }
-
-    const data = await safeJsonParse(response);
     
     // Return mock structure that's compatible
     return {
@@ -626,7 +624,6 @@ export async function refreshTikTokData(connectionId: string) {
     let totalComments = 0;
     let totalShares = 0;
     let totalSaves = 0;
-    let totalViews = 0;
     let engagementRate = 0;
 
     // Calculate engagement metrics
@@ -637,7 +634,6 @@ export async function refreshTikTokData(connectionId: string) {
         totalComments += video.comment_count || 0;
         totalShares += video.share_count || 0;
         totalSaves += video.save_count || 0;
-        totalViews += video.view_count || 0;
       });
 
       const totalFollowers = userInfo.follower_count || 1;

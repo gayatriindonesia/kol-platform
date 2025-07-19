@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Clock, Calendar, CheckCircle, XCircle, AlertCircle, RefreshCw, Info, User, Building, ArrowLeft, Edit, StopCircle, Timer } from 'lucide-react';
+import { Clock, Calendar, CheckCircle, XCircle, AlertCircle, RefreshCw, Info, User, Building, ArrowLeft, StopCircle, Timer } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -69,36 +69,33 @@ const CampaignDetailId: React.FC<CampaignDetailIdProps> = ({ campaign }) => {
     };
   };
 
-  const updateCountdowns = () => {
-    const now = new Date();
-    const startDate = campaign.startDate ? new Date(campaign.startDate) : null;
-    const endDate = campaign.endDate ? new Date(campaign.endDate) : null;
+  const updateCountdowns = useCallback(() => {
+  const now = new Date();
+  const startDate = campaign.startDate ? new Date(campaign.startDate) : null;
+  const endDate = campaign.endDate ? new Date(campaign.endDate) : null;
 
-    if (startDate && endDate) {
-      if (now < startDate) {
-        // Campaign belum dimulai
-        setCampaignStatus('upcoming');
-        setTimeUntilStart(calculateTimeLeft(startDate));
-        setTimeUntilEnd(null);
-      } else if (now >= startDate && now < endDate) {
-        // Campaign sedang berjalan
-        setCampaignStatus('active');
-        setTimeUntilStart(null);
-        setTimeUntilEnd(calculateTimeLeft(endDate));
-      } else {
-        // Campaign sudah berakhir
-        setCampaignStatus('ended');
-        setTimeUntilStart(null);
-        setTimeUntilEnd(null);
-      }
+  if (startDate && endDate) {
+    if (now < startDate) {
+      setCampaignStatus('upcoming');
+      setTimeUntilStart(calculateTimeLeft(startDate));
+      setTimeUntilEnd(null);
+    } else if (now >= startDate && now < endDate) {
+      setCampaignStatus('active');
+      setTimeUntilStart(null);
+      setTimeUntilEnd(calculateTimeLeft(endDate));
+    } else {
+      setCampaignStatus('ended');
+      setTimeUntilStart(null);
+      setTimeUntilEnd(null);
     }
-  };
+  }
+}, [campaign.startDate, campaign.endDate]);
 
-  useEffect(() => {
-    updateCountdowns();
-    const interval = setInterval(updateCountdowns, 1000);
-    return () => clearInterval(interval);
-  }, [campaign.startDate, campaign.endDate]);
+useEffect(() => {
+  updateCountdowns();
+  const interval = setInterval(updateCountdowns, 1000);
+  return () => clearInterval(interval);
+}, [updateCountdowns]);
 
   const formatTimeUnit = (value: number, unit: string) => {
     return (
@@ -171,10 +168,6 @@ const CampaignDetailId: React.FC<CampaignDetailIdProps> = ({ campaign }) => {
     } finally {
       setRefreshing(false);
     }
-  };
-
-  const handleEdit = () => {
-    router.push(`/campaigns/${campaign.id}/edit`);
   };
 
   const handleStopCampaign = async () => {
@@ -259,16 +252,6 @@ const CampaignDetailId: React.FC<CampaignDetailIdProps> = ({ campaign }) => {
     }).format(amount);
   };
 
-  const formatNumber = (num?: number) => {
-    if (!num) return '0';
-    return new Intl.NumberFormat('id-ID').format(num);
-  };
-
-  const formatPercentage = (num?: number) => {
-    if (!num) return '0%';
-    return `${num.toFixed(2)}%`;
-  };
-
   const getDurationText = () => {
     if (!campaign.startDate || !campaign.endDate) return '-';
     const start = new Date(campaign.startDate);
@@ -276,18 +259,6 @@ const CampaignDetailId: React.FC<CampaignDetailIdProps> = ({ campaign }) => {
     const diffTime = Math.abs(end.getTime() - start.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return `${diffDays} hari`;
-  };
-
-  const getRemainingTime = () => {
-    if (!campaign.endDate || ['COMPLETE', 'COMPLETED', 'ENDED'].includes(campaign.status?.toUpperCase() || '')) return null;
-    const now = new Date();
-    const end = new Date(campaign.endDate);
-    const diffTime = end.getTime() - now.getTime();
-    
-    if (diffTime <= 0) return 'Berakhir';
-    
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return `${diffDays} hari tersisa`;
   };
 
   if (!campaign) {
