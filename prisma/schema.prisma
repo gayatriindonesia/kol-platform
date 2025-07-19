@@ -1,0 +1,285 @@
+generator client {
+  provider = "prisma-client-js"
+  // output   = "./node_modules/@prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+model User {
+  id                String    @id @default(cuid())
+  name              String?
+  email             String?   @unique
+  password          String?
+  emailVerified     DateTime?
+  image             String?
+  // role              UserRole  @default(BRAND)
+  role              UserRole?
+  accounts          Account[]
+  sessions          Session[]
+  brands            Brand[]   // One-to-many relation
+  influencers       Influencer[]   // One-to-many relation
+  notifications     Notification[] // One-to-many relation
+
+   // Relasi ke AuditLog
+  auditLogs       AuditLog[] @relation("AuditActor")
+  auditLogsTarget AuditLog[] @relation("AuditTarget")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  id          String   @id @default(uuid())
+  email       String @unique
+  token       String   @unique
+  expires     DateTime
+}
+
+model PasswordResetToken {
+  id          String  @id @default(cuid())
+  email       String  @unique
+  token       String  @unique
+  expires     DateTime
+}
+
+model Brand {
+  id          String   @id @default(cuid())
+  name        String
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaigns   Campaign[]
+  invitations CampaignInvitation[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Campaign {
+  id                String              @id @default(cuid())
+  name              String
+  type              CampaignType
+  directData        Json?         // Untuk menyimpan data campaign direct
+  selfServiceData   Json?         // Untuk menyimpan data self-service
+  brandId           String
+  brands            Brand               @relation(fields: [brandId], references: [id])
+  invitations       CampaignInvitation[]
+  startDate         DateTime
+  endDate           DateTime
+  status            CampaignStatus      @default(PENDING)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+}
+
+model CampaignInvitation {
+  id           String   @id @default(cuid())
+  campaignId   String
+  influencerId String
+  brandId      String
+  status       CampaignStatus @default(PENDING)
+  message      String?  // Pesan dari brand ke influencer
+  responseMessage String? // Pesan balasan dari influencer
+  invitedAt    DateTime @default(now())
+  respondedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  
+  // Relations
+  campaign     Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  influencer   Influencer @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+  brand        Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  
+  @@unique([campaignId, influencerId]) // Satu campaign hanya bisa invite satu influencer sekali
+}
+
+
+model Influencer {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categories        InfluencerCategory[]
+  platforms         InfluencerPlatform[] // Relasi many-to-many
+  invitations       CampaignInvitation[]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Category {
+  id          String      @id @default(cuid())
+  name        String      @unique
+  description String?
+  influencers InfluencerCategory[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model InfluencerCategory {
+  influencer   Influencer @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+  influencerId String
+
+  category     Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId   String
+
+  @@id([influencerId, categoryId]) // composite primary key
+}
+
+model Platform {
+  id              String   @id @default(cuid())
+  name            String   @unique
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  services        Service[] // Relasi one-to-many
+  influencers     InfluencerPlatform[] // Relasi many-to-many
+}
+
+model InfluencerPlatform {
+  id                String     @id @default(cuid())
+  influencerId      String
+  platformId        String
+  influencer        Influencer @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+  platform          Platform   @relation(fields: [platformId], references: [id], onDelete: Cascade)
+
+  // Attribute TikTok
+  openId            String?   @unique // TikTok's unique user ID
+  username          String
+  followers         Int        @default(0)
+  posts             Int        @default(0)
+  platformData      Json?      // Menyimpan data tambahan dari platform
+  accessToken       String?    // Token akses untuk platform
+  refreshToken      String?    // Token refresh untuk platform
+  tokenExpiresAt    DateTime?  // Kapan token kedaluwarsa
+  lastSynced        DateTime?  // Terakhir kali data disinkronkan
+  likesCount      Int?     @default(0)
+  commentsCount   Int?     @default(0)
+  sharesCount     Int?     @default(0)
+  savesCount      Int?     @default(0)
+  engagementRate  Float?   @default(0)
+
+  // attributes pada platformData(JSON)
+  // bio               String?
+  // avatarUrl         String?
+  // likesCount        Int?
+  // videoCount        Int?
+
+  // Bidang spesifik Instagram
+  igUserId            String?    // Instagram User ID
+  igBusinessAccountId String?   // Instagram Business Account ID (jika menggunakan akun bisnis)
+  igMediaCount        Int?       // Jumlah media di Instagram
+  igEngagementRate    Float?     // Rate engagement
+  igAccountType       String?    // PERSONAL, BUSINESS, atau CREATOR
+
+  @@unique([influencerId, platformId]) // Satu influencer hanya bisa memiliki satu entri per platform
+}
+
+model Service {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  type        String    // Misalnya: "POST", "REELS", "VIDEO"
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relasi many-to-one dengan Platform
+  platformId  String
+  platform    Platform  @relation(fields: [platformId], references: [id])
+  
+  @@unique([platformId, name])
+}
+
+// Untuk implementasi PKCE (wajib di TikTok OAuth 2.0)
+model OAuthState {
+  id            String   @id @default(cuid())
+  state         String   @unique
+  codeVerifier  String
+  userId        String
+  provider      String   // "tiktok", "instagram", dll.
+  redirectUri   String?
+  createdAt     DateTime @default(now())
+
+  @@index([provider, userId])
+}
+
+model Notification {
+  id         String       @id @default(cuid())
+  userId     String       
+  role       UserRole?
+  type       NotificationType       
+  title      String       
+  message    String
+  data       Json?
+  isRead     Boolean      @default(false)
+  createdAt  DateTime     @default(now())
+
+  // Optional: relation ke User, jika dibutuhkan
+  user     User        @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead], name: "idx_user_unread")
+  @@index([type, createdAt], name: "idx_type_created")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String   // e.g., "ROLE_UPDATE"
+  message   String
+  userId    String   // siapa yang melakukan perubahan
+  targetId  String   // siapa yang diubah
+  createdAt DateTime @default(now())
+
+  user   User @relation("AuditActor", fields: [userId], references: [id])
+  target    User     @relation("AuditTarget", fields: [targetId], references: [id])
+}
+
+
+enum UserRole {
+  ADMIN
+  BRAND
+  INFLUENCER
+}
+
+enum CampaignType {
+  DIRECT
+  SELF_SERVICE
+}
+
+enum CampaignStatus {
+  PENDING   // Belum dimulai
+  ACTIVE    // Sedang berjalan
+  COMPLETED // Selesai
+  CANCELLED // Dibatalkan
+  REJECTED  // Ditolak
+}
+
+enum NotificationType {
+  ROLE_UPDATE
+  INVITATION
+  CAMPAIGN_APPROVAL
+  CAMPAIGN_REJECTION
+  SYSTEM
+}

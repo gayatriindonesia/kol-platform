@@ -1,0 +1,60 @@
+*** Running CLI untuk generate default Admin ***
+1. npm run prisma:seed
+
+*** Buat Seeder Category ***
+// scripts/seed-categories.ts
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
+
+const categories = [
+  {
+    name: "Fashion & Beauty",
+    description: "Mode, gaya hidup, makeup, skincare, dan fashion trends"
+  },
+  {
+    name: "Food & Beverage",
+    description: "Kuliner, resep, review makanan, dan minuman"
+  },
+]
+
+async function seedCategories() {
+  console.log('Seeding categories...')
+  
+  for (const category of categories) {
+    try {
+      await prisma.category.upsert({
+        where: { name: category.name },
+        update: {
+          description: category.description
+        },
+        create: {
+          name: category.name,
+          description: category.description
+        }
+      })
+      console.log(`✓ Created/Updated category: ${category.name}`)
+    } catch (error) {
+      console.error(`✗ Error creating category ${category.name}:`, error)
+    }
+  }
+  
+  console.log('Categories seeding completed!')
+}
+
+async function main() {
+  try {
+    await seedCategories()
+  } catch (error) {
+    console.error('Error seeding categories:', error)
+  } finally {
+    await prisma.$disconnect()
+  }
+}
+
+main()
+
+// Untuk menjalankan script ini:
+// npx tsx scripts/seed-categories.ts
+// atau
+// node scripts/seed-categories.js (jika sudah dikompilasi)

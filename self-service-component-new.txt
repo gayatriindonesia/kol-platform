@@ -1,0 +1,427 @@
+// Update komponen SelfServiceSetup untuk menambah form campaign message
+
+"use client";
+import Image from "next/image";
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import useCampaignAppStore, { SelectedInfluencer } from "@/storeCampaign";
+import { getAllInfluencer } from "@/lib/influencer.actions";
+import { BadgeCheck, User, Users, MessageSquare, Send, Search, Filter } from "lucide-react";
+import { FaInstagram, FaYoutube, FaTiktok, FaTwitter } from "react-icons/fa";
+
+const SelfServiceSetup = () => {
+  const { data: session } = useSession();
+  const { setSelfServiceCampaignData } = useCampaignAppStore();
+  const [influencers, setInfluencers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedInfluencers, setSelectedInfluencers] = useState<string[]>([]);
+  const [campaignMessage, setCampaignMessage] = useState('');
+
+  // State untuk fitur pencarian dan filter
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
+
+  // Daftar platform yang tersedia untuk filter
+  const platformOptions = [
+    { value: 'instagram', label: 'Instagram', icon: <FaInstagram /> },
+    { value: 'youtube', label: 'YouTube', icon: <FaYoutube /> },
+    { value: 'tiktok', label: 'TikTok', icon: <FaTiktok /> },
+    { value: 'twitter', label: 'Twitter/X', icon: <FaTwitter /> },
+  ];
+
+  const getDisplayName = (influencer: any) => {
+    const currentUserEmail = session?.user?.email;
+    const isCurrentUser = influencer.user?.email === currentUserEmail;
+
+    if (isCurrentUser && session?.user?.name) {
+      return session.user.name;
+    }
+
+    return influencer.user?.name || 'Nama tidak tersedia';
+  };
+
+  // Load campaign message from store
+  {/**
+  useEffect(() => {
+    if (selfServiceCampaignData?.message) {
+      setCampaignMessage(selfServiceCampaignData.message);
+    }
+  }, [selfServiceCampaignData]);
+   */}
+
+  // Fungsi untuk memfilter influencer berdasarkan pencarian dan platform
+  const filteredInfluencers = influencers.filter(influencer => {
+    const nameMatch = getDisplayName(influencer)
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+
+    let platformMatch = true;
+    if (selectedPlatforms.length > 0) {
+      const influencerPlatforms = influencer.platforms?.map((p: any) =>
+        p.name.toLowerCase()
+      ) || [];
+
+      platformMatch = selectedPlatforms.some(platform =>
+        influencerPlatforms.some((ip: string) => ip.includes(platform))
+      );
+    }
+
+    return nameMatch && platformMatch;
+  });
+
+  useEffect(() => {
+    const fetchInfluencers = async () => {
+      try {
+        const result = await getAllInfluencer();
+        console.log(result, 'data semua influencer');
+
+        if (result.error) {
+          setError(result.error);
+        } else if (result.data) {
+          setInfluencers(result.data);
+        }
+      } catch (err: any) {
+        setError(err.message || "Gagal memuat data influencer");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInfluencers();
+  }, []);
+
+  // Update store dengan influencer yang dipilih dan campaign message
+  useEffect(() => {
+    const selectedData: SelectedInfluencer[] = influencers
+      .filter(inf => selectedInfluencers.includes(inf.id))
+      .map(inf => ({
+        influencerId: inf.id,
+        influencerName: inf.user?.name || 'Unknown',
+      }));
+
+    setSelfServiceCampaignData({
+      selectedInfluencers: selectedData,
+      message: campaignMessage,
+    } as any);
+  }, [selectedInfluencers, influencers, campaignMessage, setSelfServiceCampaignData]);
+
+  const handleSelectInfluencer = (influencerId: string) => {
+    setSelectedInfluencers(prev =>
+      prev.includes(influencerId)
+        ? prev.filter(id => id !== influencerId)
+        : [...prev, influencerId]
+    );
+  };
+
+  const getPlatformIcon = (platformName: string) => {
+    const name = platformName.toLowerCase();
+    if (name.includes('instagram')) return <FaInstagram className="h-4 w-4" />;
+    if (name.includes('youtube')) return <FaYoutube className="h-4 w-4" />;
+    if (name.includes('tiktok')) return <FaTiktok className="h-4 w-4" />;
+    if (name.includes('twitter') || name.includes('x')) return <FaTwitter className="h-4 w-4" />;
+    return <User className="h-4 w-4" />;
+  };
+
+  const getAvatarUrl = (influencer: any) => {
+    const currentUserEmail = session?.user?.email;
+    const isCurrentUser = influencer.user?.email === currentUserEmail;
+
+    if (isCurrentUser && session?.user?.image) {
+      return session.user.image;
+    }
+
+    if (influencer.user?.image) {
+      return influencer.user.image;
+    }
+
+    const platformWithAvatar = influencer.platforms?.find((p: any) => p.avatarUrl);
+    if (platformWithAvatar?.avatarUrl) {
+      return platformWithAvatar.avatarUrl;
+    }
+
+    return "https://ui-avatars.com/api/?name=User&background=e5e7eb&color=6b7280&size=100";
+  };
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const target = e.target as HTMLImageElement;
+    target.src = "https://ui-avatars.com/api/?name=User&background=e5e7eb&color=6b7280&size=100";
+  };
+
+  const handlePlatformFilter = (platformValue: string) => {
+    setSelectedPlatforms(prev =>
+      prev.includes(platformValue)
+        ? prev.filter(p => p !== platformValue)
+        : [...prev, platformValue]
+    );
+  };
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setSelectedPlatforms([]);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p className="text-red-800">Error: {error}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-xl font-semibold">Pilih Influencer untuk Kampanye Anda</h2>
+          <p className="text-gray-600 text-sm mt-1">
+            Pilih influencer yang sesuai dengan target audience kampanye Anda
+          </p>
+        </div>
+        {selectedInfluencers.length > 0 && (
+          <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium flex items-center">
+            <BadgeCheck className="h-4 w-4 mr-1" />
+            {selectedInfluencers.length} Influencer Terpilih
+          </span>
+        )}
+      </div>
+
+      {/* Campaign Message Section */}
+      {selectedInfluencers.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <MessageSquare className="h-5 w-5 text-blue-600" />
+            <h3 className="text-lg font-semibold text-gray-900">
+              Pesan untuk Influencer
+            </h3>
+          </div>
+          <p className="text-gray-600 text-sm mb-4">
+            Tulis pesan yang akan dikirim kepada influencer yang Anda pilih. 
+            Jelaskan tentang kampanye dan mengapa Anda tertarik berkolaborasi dengan mereka.
+          </p>
+          <div className="space-y-3">
+            <textarea
+              value={campaignMessage}
+              onChange={(e) => setCampaignMessage(e.target.value)}
+              placeholder="Contoh: Halo! Kami tertarik untuk berkolaborasi dengan Anda dalam kampanye produk terbaru kami. Kampanye ini fokus pada... dan kami percaya konten Anda sangat sesuai dengan target audience kami."
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 resize-none"
+              rows={4}
+            />
+            <div className="flex items-center justify-between text-sm text-gray-500">
+              <span>
+                {campaignMessage.length > 0 
+                  ? `${campaignMessage.length} karakter`
+                  : 'Tulis pesan untuk influencer...'
+                }
+              </span>
+              {campaignMessage.length > 500 && (
+                <span className="text-amber-600">
+                  Pesan terlalu panjang, disarankan maksimal 500 karakter
+                </span>
+              )}
+            </div>
+          </div>
+          
+          {/* Preview Message */}
+          {campaignMessage && (
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-start gap-2">
+                <Send className="h-4 w-4 text-blue-600 mt-1 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-blue-900 mb-1">Preview Pesan:</p>
+                  <p className="text-sm text-blue-800 leading-relaxed">
+                    "{campaignMessage}"
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Search and Filter Section */}
+      <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Search Input */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Cari Influencer
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Cari berdasarkan nama..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+            </div>
+          </div>
+
+          {/* Platform Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Filter Platform
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {platformOptions.map((platform) => (
+                <button
+                  key={platform.value}
+                  onClick={() => handlePlatformFilter(platform.value)}
+                  className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    selectedPlatforms.includes(platform.value)
+                      ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                      : 'bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200'
+                  }`}
+                >
+                  {platform.icon}
+                  {platform.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Clear Filters */}
+        {(searchQuery || selectedPlatforms.length > 0) && (
+          <div className="mt-4 flex items-center justify-between">
+            <p className="text-sm text-gray-600">
+              Menampilkan {filteredInfluencers.length} dari {influencers.length} influencer
+            </p>
+            <button
+              onClick={clearFilters}
+              className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+            >
+              Hapus Filter
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Influencer Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredInfluencers.map((influencer) => (
+          <div
+            key={influencer.id}
+            className={`bg-white rounded-xl border-2 transition-all duration-200 cursor-pointer hover:shadow-md ${
+              selectedInfluencers.includes(influencer.id)
+                ? 'border-blue-500 shadow-lg'
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+            onClick={() => handleSelectInfluencer(influencer.id)}
+          >
+            <div className="p-5">
+              {/* Header with Avatar and Name */}
+              <div className="flex items-center gap-3 mb-4">
+                <div className="relative">
+                  <Image
+                    src={getAvatarUrl(influencer)}
+                    alt={getDisplayName(influencer)}
+                    width={48}
+                    height={48}
+                    className="rounded-full object-cover border-2 border-gray-200"
+                    onError={handleImageError}
+                  />
+                  {selectedInfluencers.includes(influencer.id) && (
+                    <div className="absolute -top-1 -right-1 bg-blue-500 rounded-full p-1">
+                      <BadgeCheck className="h-3 w-3 text-white" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-gray-900 truncate">
+                    {getDisplayName(influencer)}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    {influencer.user?.email || 'Email tidak tersedia'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Platforms */}
+              {influencer.platforms && influencer.platforms.length > 0 && (
+                <div className="mb-4">
+                  <div className="flex flex-wrap gap-2">
+                    {influencer.platforms.map((platform: any, index: number) => (
+                      <div
+                        key={index}
+                        className="inline-flex items-center gap-1 bg-gray-100 px-2 py-1 rounded-md text-xs"
+                      >
+                        {getPlatformIcon(platform.name)}
+                        <span className="text-gray-700">{platform.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Statistics */}
+              <div className="grid grid-cols-2 gap-4 text-center">
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="flex items-center justify-center gap-1 mb-1">
+                    <Users className="h-4 w-4 text-gray-600" />
+                  </div>
+                  <p className="text-xs text-gray-600">Followers</p>
+                  <p className="font-semibold text-gray-900">
+                    {influencer.totalFollowers ? 
+                      new Intl.NumberFormat('id-ID').format(influencer.totalFollowers) : 
+                      'N/A'
+                    }
+                  </p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="flex items-center justify-center gap-1 mb-1">
+                    <MessageSquare className="h-4 w-4 text-gray-600" />
+                  </div>
+                  <p className="text-xs text-gray-600">Engagement</p>
+                  <p className="font-semibold text-gray-900">
+                    {influencer.avgEngagement ? 
+                      `${influencer.avgEngagement.toFixed(1)}%` : 
+                      'N/A'
+                    }
+                  </p>
+                </div>
+              </div>
+
+              {/* Bio */}
+              {influencer.bio && (
+                <div className="mt-4">
+                  <p className="text-sm text-gray-600 line-clamp-2">
+                    {influencer.bio}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* No Results */}
+      {filteredInfluencers.length === 0 && !loading && (
+        <div className="text-center py-12">
+          <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            Tidak ada influencer ditemukan
+          </h3>
+          <p className="text-gray-600">
+            {searchQuery || selectedPlatforms.length > 0
+              ? 'Coba ubah filter pencarian Anda'
+              : 'Belum ada influencer yang terdaftar'
+            }
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default SelfServiceSetup;
