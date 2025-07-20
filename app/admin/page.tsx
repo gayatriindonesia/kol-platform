@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { brandNavigationItems } from '@/constants/navigation'
+import { adminNavigationItems } from '@/constants/navigation'
 import { Users, Target, TrendingUp, Activity } from 'lucide-react'
 import { getAllBrand } from '@/lib/brand.actions'
 import { getAllCampaign } from '@/lib/campaign.actions'
@@ -228,12 +228,12 @@ export default async function AdminHomePage() {
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {brandNavigationItems.map((item) => {
+            {adminNavigationItems.map((item, index) => {
               const Icon = item.icon
               return (
-                <Link 
-                  key={item.path} 
-                  href={item.path} 
+                <Link
+                  key={`${item.name}-${index}`}
+                  href={item.path || '#'}
                   className="group block"
                 >
                   <div className="h-full p-6 bg-gray-50 hover:bg-white border border-gray-200 hover:border-blue-200 rounded-xl transition-all duration-300 group-hover:scale-105 hover:shadow-md">

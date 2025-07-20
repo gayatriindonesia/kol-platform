@@ -1,62 +1,119 @@
 "use client";
 
-import useCampaignAppStore from "@/storeCampaign";
 import { useEffect, useState } from "react";
-import { getAllBrand } from "@/lib/brand.actions";
+import { getAllBrand, createBrand } from "@/lib/brand.actions";
+import useCampaignAppStore from "@/storeCampaign";
 import { Brand } from "@/types/brand";
 
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { Check, PlusCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
+
 const BrandSelector = () => {
-  const { setSelectedBrand, selectedBrand } = useCampaignAppStore();
+  const { selectedBrand, setSelectedBrand } = useCampaignAppStore();
   const [brands, setBrands] = useState<Brand[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [newBrandName, setNewBrandName] = useState("");
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     const fetchBrands = async () => {
-      try {
-        const result = await getAllBrand();
-        
-        if (result.error || !result.data) {
-          setError(result.error || "Gagal memuat data brand");
-          return;
-        }
-
+      const result = await getAllBrand();
+      if (result.data) {
         setBrands(result.data);
-      } catch {
-        setError("Terjadi kesalahan saat memuat brand");
-      } finally {
-        setLoading(false);
       }
     };
-    
     fetchBrands();
   }, []);
 
-  const handleBrandChange = (brandId: string) => {
-    const selected = brands.find(brand => brand.id === brandId);
-    setSelectedBrand(selected || null);
+  const handleSelect = (brand: Brand) => {
+    setSelectedBrand(brand);
+    setOpen(false);
   };
 
-  if (loading) return <div className="text-center text-gray-500 py-4">Memuat brand...</div>;
-  if (error) return <div className="p-4 text-red-500">{error}</div>;
-  if (brands.length === 0) return <div className="p-4 text-gray-500">Belum ada brand yang terdaftar</div>;
+  const handleAddBrand = async () => {
+    if (!newBrandName.trim()) return;
+
+    const result = await createBrand(newBrandName.trim());
+    if (result.data) {
+      setBrands((prev) => [...prev, result.data]);
+      setSelectedBrand(result.data);
+      setNewBrandName("");
+      setOpen(false);
+    }
+  };
 
   return (
-    <div className="space-y-4 p-4">
-      
-      <select 
-        value={selectedBrand?.id || ""}
-        onChange={(e) => handleBrandChange(e.target.value)}
-        className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-      >
-        <option value="">Pilih Brand</option>
-        {brands.map((brand) => (
-          <option key={brand.id} value={brand.id}>
-            {brand.name}
-          </option>
-        ))}
-      </select>
-      
+    <div className="p-4 space-y-2">
+      <label className="block text-sm font-medium text-gray-700 mb-1">Pilih Brand</label>
+
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between"
+          >
+            {selectedBrand ? selectedBrand.name : "Pilih Brand"}
+          </Button>
+        </PopoverTrigger>
+
+        <PopoverContent
+          align="start"
+          sideOffset={8}
+          className="w-full sm:min-w-[--radix-popover-trigger-width] sm:max-w-sm p-0 rounded-xl shadow-lg border bg-white"
+        >
+          {/* Scrollable brand list */}
+          <div className="max-h-60 overflow-y-auto">
+            {brands.map((brand) => (
+              <div
+                key={brand.id}
+                onClick={() => handleSelect(brand)}
+                className={cn(
+                  "px-4 py-2 cursor-pointer hover:bg-gray-100 flex items-center",
+                  selectedBrand?.id === brand.id && "bg-blue-100"
+                )}
+              >
+                <Check
+                  className={cn(
+                    "mr-2 h-4 w-4",
+                    selectedBrand?.id === brand.id ? "opacity-100" : "opacity-0"
+                  )}
+                />
+                {brand.name}
+              </div>
+            ))}
+          </div>
+
+          {/* Add new brand form */}
+          <div className="border-t px-4 py-3">
+            <div className="text-sm font-medium mb-1">Tambah Brand Baru</div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Nama brand"
+                value={newBrandName}
+                onChange={(e) => setNewBrandName(e.target.value)}
+                className="flex-1 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <Button
+                size="sm"
+                onClick={handleAddBrand}
+                disabled={!newBrandName.trim()}
+              >
+                <PlusCircle className="w-4 h-4 mr-1" />
+                Tambah
+              </Button>
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
+
       {selectedBrand && (
         <div className="mt-2 p-3 bg-blue-50 rounded-lg">
           <p className="text-sm text-blue-800">

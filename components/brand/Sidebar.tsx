@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import { brandNavigationItems } from '@/constants/navigation'
 import Image from 'next/image'
 import { Session } from 'next-auth'
+import { brandNavigationItems } from '@/constants/navigation'
 
 interface SidebarProps {
   isMobile: boolean
@@ -15,20 +15,14 @@ interface SidebarProps {
 
 export default function Sidebar({ isMobile, session: initialSession }: SidebarProps) {
   const pathname = usePathname()
-  const [isOpen, setIsOpen] = useState(true)
   const { data: session } = useSession()
+  const [isOpen, setIsOpen] = useState(true)
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null)
 
-  // Gunakan session dari hook jika tersedia, jika tidak gunakan initialSession
   const currentSession = session || initialSession
 
-  // Handle responsive layout
   useEffect(() => {
-    // On desktop, sidebar should always be open
-    if (!isMobile) {
-      setIsOpen(true)
-    } else {
-      setIsOpen(false)
-    }
+    setIsOpen(!isMobile)
   }, [isMobile])
 
   const toggleSidebar = () => setIsOpen(!isOpen)
@@ -38,10 +32,9 @@ export default function Sidebar({ isMobile, session: initialSession }: SidebarPr
     return text.length > maxLength ? text.slice(0, maxLength) + '...' : text
   }
 
-
-  // const handleSignOut = async () => {
-  //  await signOut({ redirect: true, callbackUrl: '/signin' })
-  // }
+  const handleDropdownToggle = (name: string) => {
+    setOpenDropdown(prev => (prev === name ? null : name))
+  }
 
   return (
     <>
@@ -53,18 +46,18 @@ export default function Sidebar({ isMobile, session: initialSession }: SidebarPr
           aria-label="Toggle menu"
         >
           {isOpen ? (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           )}
         </button>
       )}
 
-      {/* Overlay untuk mobile ketika sidebar terbuka */}
+      {/* Mobile Overlay */}
       {isMobile && isOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-20"
@@ -74,14 +67,14 @@ export default function Sidebar({ isMobile, session: initialSession }: SidebarPr
 
       {/* Sidebar */}
       <aside
-        className={
-          `
+        className={`
           ${isOpen ? 'translate-x-0' : '-translate-x-full'} 
           fixed md:relative md:translate-x-0 z-20
           w-64 h-full bg-gray-800 text-white transition-transform duration-300 ease-in-out
           overflow-y-auto
         `}
       >
+        {/* Logo */}
         <div className="p-4">
           <Link href="/admin" className="flex items-center">
             <Image src="/images/logo.png" alt="Logo" className="h-8 w-8 mr-2" width={50} height={50} />
@@ -89,53 +82,107 @@ export default function Sidebar({ isMobile, session: initialSession }: SidebarPr
           </Link>
         </div>
 
+        {/* User Info */}
         <div className="px-4 py-2">
           <div className="flex items-center">
             <div className="h-10 w-10 rounded-full bg-gray-700 flex items-center justify-center mr-3">
-              {currentSession?.user?.image ? (
-                <Image
-                  src={currentSession.user.image}
-                  alt={currentSession.user.name || "User"}
-                  className="h-10 w-10 rounded-full"
-                  width={500}
-                  height={500}
-                />
-              ) : (
-                <Image
-                  src="/images/avataruser.png"
-                  alt='profile'
-                  className="h-8 w-8 rounded-full"
-                  width={500}
-                  height={500}
-                />
-              )}
+              <Image
+                src={currentSession?.user?.image || '/images/avataruser.png'}
+                alt={currentSession?.user?.name || 'User'}
+                className="h-10 w-10 rounded-full"
+                width={500}
+                height={500}
+              />
             </div>
             <div>
               <div className="font-medium">
-                {truncateText(currentSession?.user?.name || "Brand User", 15)}
+                {truncateText(currentSession?.user?.name || 'Brand User', 15)}
               </div>
-              <div className="text-sm text-gray-400">{currentSession?.user?.email || ""}</div>
+              <div className="text-sm text-gray-400">{currentSession?.user?.email || ''}</div>
             </div>
           </div>
         </div>
 
+        {/* Navigation */}
         <div className="mt-6">
           <div className="px-4 py-2 text-xs text-gray-400">MENU</div>
           <nav>
             <ul>
               {brandNavigationItems.map((item) => {
-                const Icon = item.icon   // assign komponen ke variabel
+                const Icon = item.icon
+                const isActive = pathname === item.path
+                const hasChildren = !!item.children?.length
+                const isDropdownOpen = openDropdown === item.name
+
                 return (
-                  <li key={item.path} className="px-4 py-2">
-                    <Link
-                      href={item.path}
-                      className={`flex items-center ${pathname === item.path ? 'bg-blue-600 text-white rounded-md px-4 py-2' : 'text-gray-300 hover:text-white hover:bg-gray-700 rounded-md px-4 py-2'
-                        } transition-colors duration-200`}
-                      onClick={() => isMobile && setIsOpen(false)}
-                    >
-                      <Icon size={18} className="mr-3" />
-                      {item.name}
-                    </Link>
+                  <li key={item.name} className="px-4 py-2">
+                    {hasChildren ? (
+                      <>
+                        <button
+                          className={`flex items-center w-full ${
+                            isDropdownOpen ? 'bg-blue-700' : ''
+                          } text-left hover:bg-gray-700 text-gray-300 hover:text-white rounded-md px-4 py-2`}
+                          onClick={() => handleDropdownToggle(item.name)}
+                        >
+                          <Icon size={18} className="mr-3" />
+                          <span className="flex-1">{item.name}</span>
+                          <svg
+                            className={`w-4 h-4 transition-transform ${
+                              isDropdownOpen ? 'rotate-180' : ''
+                            }`}
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            viewBox="0 0 24 24"
+                          >
+                            <path d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                        {isDropdownOpen && (
+                          <ul className="ml-6 mt-2 space-y-1">
+                            {item.children?.map((sub) => {
+                              const SubIcon = sub.icon
+                              return (
+                                <li key={sub.path}>
+                                  <Link
+                                    href={sub.path!}
+                                    className={`flex items-center text-sm ${
+                                      pathname === sub.path
+                                        ? 'bg-blue-600 text-white'
+                                        : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                                    } rounded-md px-4 py-2`}
+                                    onClick={() => isMobile && setIsOpen(false)}
+                                  >
+                                    <SubIcon size={16} className="mr-2" />
+                                    {sub.name}
+                                  </Link>
+                                </li>
+                              )
+                            })}
+                          </ul>
+                        )}
+                      </>
+                    ) : item.path ? (
+                      <Link
+                        href={item.path}
+                        className={`flex items-center ${
+                          isActive
+                            ? 'bg-blue-600 text-white'
+                            : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                        } rounded-md px-4 py-2 transition-colors duration-200`}
+                        onClick={() => isMobile && setIsOpen(false)}
+                      >
+                        <Icon size={18} className="mr-3" />
+                        {item.name}
+                      </Link>
+                    ) : (
+                      <div
+                        className="flex items-center text-gray-300 rounded-md px-4 py-2 cursor-default"
+                      >
+                        <Icon size={18} className="mr-3" />
+                        {item.name}
+                      </div>
+                    )}
                   </li>
                 )
               })}
@@ -143,7 +190,8 @@ export default function Sidebar({ isMobile, session: initialSession }: SidebarPr
           </nav>
         </div>
 
-        {/** disable button logout
+        {/* Logout Button (optional) */}
+        {/*
         <div className="absolute bottom-0 w-full p-4">
           <button 
             onClick={handleSignOut}
@@ -153,7 +201,7 @@ export default function Sidebar({ isMobile, session: initialSession }: SidebarPr
             Sign out
           </button>
         </div>
-         */}
+        */}
       </aside>
     </>
   )

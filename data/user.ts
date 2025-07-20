@@ -18,6 +18,13 @@ export const getUserById = async (id: string) => {
         const user = await db.user.findUnique({
             where: {
                 id
+            },
+            select: {
+                id: true,
+                email: true,
+                role: true,
+                name: true,
+                emailVerified: true,
             }
         });
         return user;

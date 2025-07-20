@@ -12,7 +12,7 @@ type UpdateInfluencerPayload = {
   }>;
 }
 
-// Get All with Category and Platform
+// Get All
 export async function getAllInfluencer() {
   try {
     const session = await auth();
@@ -67,6 +67,8 @@ export async function getAllInfluencer() {
         ...p.platform,
         username: p.username,
         followers: p.followers,
+        posts: p.posts,
+        engagementRate: p.engagementRate,
 
         // Ambil Image Platform
         platformData: influencer.platforms.map((p) => {
@@ -85,6 +87,8 @@ export async function getAllInfluencer() {
             ...p.platform,
             username: p.username,
             followers: p.followers,
+            posts: p.posts,
+            engagementRate: p.engagementRate,
             avatarUrl: parsedData?.avatarUrl || null,
             thumbnailUrl: parsedData?.thumbnailUrl || null
           };

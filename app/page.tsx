@@ -3,8 +3,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Users, TrendingUp, Star, Mail, Phone, MapPin, Video, Play, X } from 'lucide-react';
 import { FaFacebook, FaInstagram, FaLinkedin, FaTiktok, FaTwitter, FaYoutube } from 'react-icons/fa';
+import { useSession } from "next-auth/react";
 
 const InfluencerAgency = () => {
+  const { data: session } = useSession();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
@@ -12,8 +14,8 @@ const InfluencerAgency = () => {
 
   const carouselSlides = [
     {
-      title: "Connecting Brands with Top Influencers",
-      subtitle: "We bridge the gap between innovative brands and influential creators",
+      title: "",
+      subtitle: "",
       image: "/images/carousel/carousel-1.png"
     },
     {
@@ -110,11 +112,11 @@ const InfluencerAgency = () => {
   useEffect(() => {
     // Close video modal when pressing escape key
     const handleEsc = (event: KeyboardEvent) => {
-  if (event.key === 'Escape') {
-    setSelectedVideo(null);
-  }
-};
-    
+      if (event.key === 'Escape') {
+        setSelectedVideo(null);
+      }
+    };
+
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
   }, []);
@@ -128,8 +130,8 @@ const InfluencerAgency = () => {
   };
 
   const openVideo = (videoId: string) => {
-  setSelectedVideo(videoId);
-};
+    setSelectedVideo(videoId);
+  };
 
   const closeVideo = () => {
     setSelectedVideo(null);
@@ -145,7 +147,7 @@ const InfluencerAgency = () => {
       {selectedVideo && (
         <div className="fixed inset-0 bg-black/90 z-[100] flex items-center justify-center p-4">
           <div className="relative w-full max-w-4xl">
-            <button 
+            <button
               onClick={closeVideo}
               className="absolute -top-12 right-0 p-2 rounded-full hover:bg-slate-700 transition-colors z-10"
             >
@@ -172,7 +174,7 @@ const InfluencerAgency = () => {
           <div className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
             GayatriDigital
           </div>
-          
+
           {/* Desktop Navigation */}
           <nav className="hidden md:flex space-x-8">
             <a href="#home" className="hover:text-blue-400 transition-colors">Home</a>
@@ -181,90 +183,129 @@ const InfluencerAgency = () => {
             <a href="#platforms" className="hover:text-blue-400 transition-colors">Platforms</a>
             <a href="#gallery" className="hover:text-blue-400 transition-colors">Gallery</a>
             <a href="#contact" className="hover:text-blue-400 transition-colors">Contact</a>
-            <a href="/signin">Signin</a>
+            {session?.user ? (
+              <a
+                href={
+                  session.user.role === "ADMIN"
+                    ? "/admin/"
+                    : session.user.role === "BRAND"
+                      ? "/brand"
+                      : "/kol"
+                }
+                className="bg-blue-600 px-4 py-1.5 rounded-md hover:bg-blue-700 transition"
+              >
+                Account
+              </a>
+            ) : (
+              <a
+                href="/signin"
+                className="bg-white text-blue-600 px-4 py-1.5 rounded-md hover:bg-blue-100 transition"
+              >
+                Signin
+              </a>
+            )}
           </nav>
 
           {/* Mobile Menu Button */}
-          <button 
+          <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="md:hidden p-2 relative z-10"
           >
             <div className="w-6 h-6 flex flex-col justify-center space-y-1">
-              <div className={`w-full h-0.5 bg-white transition-all duration-300 ease-in-out ${
-                isMenuOpen ? 'rotate-45 translate-y-1.5' : ''
-              }`}></div>
-              <div className={`w-full h-0.5 bg-white transition-all duration-300 ease-in-out ${
-                isMenuOpen ? 'opacity-0 scale-0' : 'opacity-100 scale-100'
-              }`}></div>
-              <div className={`w-full h-0.5 bg-white transition-all duration-300 ease-in-out ${
-                isMenuOpen ? '-rotate-45 -translate-y-1.5' : ''
-              }`}></div>
+              <div className={`w-full h-0.5 bg-white transition-all duration-300 ease-in-out ${isMenuOpen ? 'rotate-45 translate-y-1.5' : ''
+                }`}></div>
+              <div className={`w-full h-0.5 bg-white transition-all duration-300 ease-in-out ${isMenuOpen ? 'opacity-0 scale-0' : 'opacity-100 scale-100'
+                }`}></div>
+              <div className={`w-full h-0.5 bg-white transition-all duration-300 ease-in-out ${isMenuOpen ? '-rotate-45 -translate-y-1.5' : ''
+                }`}></div>
             </div>
           </button>
         </div>
 
         {/* Mobile Navigation */}
-        <div className={`md:hidden bg-slate-800 border-t border-blue-500/20 overflow-hidden transition-all duration-300 ease-in-out ${
-          isMenuOpen ? 'max-h-80 opacity-100' : 'max-h-0 opacity-0'
-        }`}>
+        <div className={`md:hidden bg-slate-800 border-t border-blue-500/20 overflow-hidden transition-all duration-300 ease-in-out ${isMenuOpen ? 'max-h-80 opacity-100' : 'max-h-0 opacity-0'
+          }`}>
           <nav className="flex flex-col space-y-4 p-4">
-            <a 
-              href="#home" 
+            <a
+              href="#home"
               className="hover:text-blue-400 transition-all duration-200 transform hover:translate-x-2"
               onClick={() => setIsMenuOpen(false)}
             >
               Home
             </a>
-            <a 
-              href="#services" 
+            <a
+              href="#services"
               className="hover:text-blue-400 transition-all duration-200 transform hover:translate-x-2"
               onClick={() => setIsMenuOpen(false)}
             >
               Services
             </a>
-            <a 
-              href="#team" 
+            <a
+              href="#team"
               className="hover:text-blue-400 transition-all duration-200 transform hover:translate-x-2"
               onClick={() => setIsMenuOpen(false)}
             >
               Team
             </a>
-            <a 
-              href="#platforms" 
+            <a
+              href="#platforms"
               className="hover:text-blue-400 transition-all duration-200 transform hover:translate-x-2"
               onClick={() => setIsMenuOpen(false)}
             >
               Platforms
             </a>
-            <a 
-              href="#gallery" 
+            <a
+              href="#gallery"
               className="hover:text-blue-400 transition-all duration-200 transform hover:translate-x-2"
               onClick={() => setIsMenuOpen(false)}
             >
               Gallery
             </a>
-            <a 
-              href="#contact" 
+            <a
+              href="#contact"
               className="hover:text-blue-400 transition-all duration-200 transform hover:translate-x-2"
               onClick={() => setIsMenuOpen(false)}
             >
               Contact
             </a>
+            {session?.user ? (
+              <a
+                href={
+                  session.user.role === "ADMIN"
+                    ? "/admin/"
+                    : session.user.role === "BRAND"
+                      ? "/brand"
+                      : "/kol"
+                }
+                className="bg-blue-600 px-4 py-1.5 rounded-md hover:bg-blue-700 transition"
+              >
+                Account
+              </a>
+            ) : (
+              <a
+                href="/signin"
+                className="bg-white text-blue-600 px-4 py-1.5 rounded-md hover:bg-blue-100 transition"
+              >
+                Signin
+              </a>
+            )}
           </nav>
         </div>
       </header>
 
       {/* Hero Carousel */}
       <section id="home" className="relative h-screen flex items-center justify-center overflow-hidden">
-        <div 
+        <div
           className="absolute inset-0 transition-all duration-1000 bg-cover bg-center bg-no-repeat"
-          style={{ 
+          style={{
             backgroundImage: `url(${carouselSlides[currentSlide].image})`
           }}
         >
+          {/**
           <div className="absolute inset-0 bg-gradient-to-r from-blue-900/70 via-slate-900/50 to-blue-900/70"></div>
+         */}
         </div>
-        
+
         <div className="relative z-10 text-center px-4 max-w-4xl">
           <h1 className="text-4xl md:text-6xl font-bold mb-6 animate-fade-in">
             {carouselSlides[currentSlide].title}
@@ -278,13 +319,13 @@ const InfluencerAgency = () => {
         </div>
 
         {/* Carousel Controls */}
-        <button 
+        <button
           onClick={prevSlide}
           className="absolute left-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-all"
         >
           <ChevronLeft className="w-6 h-6" />
         </button>
-        <button 
+        <button
           onClick={nextSlide}
           className="absolute right-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-all"
         >
@@ -297,93 +338,92 @@ const InfluencerAgency = () => {
             <button
               key={index}
               onClick={() => setCurrentSlide(index)}
-              className={`w-3 h-3 rounded-full transition-all ${
-                index === currentSlide ? 'bg-white' : 'bg-white/50'
-              }`}
+              className={`w-3 h-3 rounded-full transition-all ${index === currentSlide ? 'bg-white' : 'bg-white/50'
+                }`}
             />
           ))}
         </div>
       </section>
 
       {/* Product Feature Section */}
-<section id="feature" className="py-20 bg-gradient-to-br from-slate-900 to-blue-900/20">
-  <div className="container mx-auto px-4">
-    <div className="grid md:grid-cols-2 gap-12 items-center">
-      {/* Video Column */}
-      <div className="relative rounded-2xl overflow-hidden shadow-2xl">
-        <div className="relative aspect-w-16 aspect-h-9">
-          <video 
-            className="w-full h-auto rounded-2xl"
-            controls
-            poster="/videos/poster.jpg" // Poster image untuk thumbnail
-          >
-            <source src="/videos/agency-showcase.mp4" type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
-        </div>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-24 h-24 bg-blue-600/80 rounded-full flex items-center justify-center backdrop-blur-sm">
-            <Play className="w-10 h-10 text-white fill-current" />
+      <section id="feature" className="py-20 bg-gradient-to-br from-slate-900 to-blue-900/20">
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            {/* Video Column */}
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl">
+              <div className="relative aspect-w-16 aspect-h-9">
+                <video
+                  className="w-full h-auto rounded-2xl"
+                  controls
+                  poster="/videos/poster.jpg" // Poster image untuk thumbnail
+                >
+                  <source src="/videos/agency-showcase.mp4" type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-24 h-24 bg-blue-600/80 rounded-full flex items-center justify-center backdrop-blur-sm">
+                  <Play className="w-10 h-10 text-white fill-current" />
+                </div>
+              </div>
+            </div>
+
+            {/* Text Column */}
+            <div>
+              <h2 className="text-4xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
+                Why Choose Our Agency?
+              </h2>
+              <p className="text-lg text-slate-300 mb-8">
+                We combine data-driven strategies with creative storytelling to deliver impactful
+                influencer campaigns that drive real business results.
+              </p>
+              <ul className="space-y-6">
+                <li className="flex items-start">
+                  <div className="bg-blue-500 rounded-full p-2 mr-4 mt-1">
+                    <Users className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold mb-1">Vetted Influencers</h3>
+                    <p className="text-slate-400">
+                      Access to our exclusive network of 10,000+ pre-vetted influencers across all major platforms.
+                    </p>
+                  </div>
+                </li>
+                <li className="flex items-start">
+                  <div className="bg-blue-500 rounded-full p-2 mr-4 mt-1">
+                    <TrendingUp className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold mb-1">Performance Analytics</h3>
+                    <p className="text-slate-400">
+                      Comprehensive campaign analytics to measure ROI, engagement, and conversion metrics.
+                    </p>
+                  </div>
+                </li>
+                <li className="flex items-start">
+                  <div className="bg-blue-500 rounded-full p-2 mr-4 mt-1">
+                    <Star className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold mb-1">Creative Excellence</h3>
+                    <p className="text-slate-400">
+                      Our creative team ensures content aligns with both brand identity and audience preferences.
+                    </p>
+                  </div>
+                </li>
+              </ul>
+              <div className="mt-10 flex flex-wrap gap-4">
+                <button className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-blue-700 transition-all">
+                  Request a Demo
+                </button>
+                <button className="bg-slate-700 text-white px-6 py-3 rounded-lg font-semibold hover:bg-slate-600 transition-all border border-slate-600">
+                  Download Brochure
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-      
-      {/* Text Column */}
-      <div>
-        <h2 className="text-4xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
-          Why Choose Our Agency?
-        </h2>
-        <p className="text-lg text-slate-300 mb-8">
-          We combine data-driven strategies with creative storytelling to deliver impactful 
-          influencer campaigns that drive real business results.
-        </p>
-        <ul className="space-y-6">
-          <li className="flex items-start">
-            <div className="bg-blue-500 rounded-full p-2 mr-4 mt-1">
-              <Users className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold mb-1">Vetted Influencers</h3>
-              <p className="text-slate-400">
-                Access to our exclusive network of 10,000+ pre-vetted influencers across all major platforms.
-              </p>
-            </div>
-          </li>
-          <li className="flex items-start">
-            <div className="bg-blue-500 rounded-full p-2 mr-4 mt-1">
-              <TrendingUp className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold mb-1">Performance Analytics</h3>
-              <p className="text-slate-400">
-                Comprehensive campaign analytics to measure ROI, engagement, and conversion metrics.
-              </p>
-            </div>
-          </li>
-          <li className="flex items-start">
-            <div className="bg-blue-500 rounded-full p-2 mr-4 mt-1">
-              <Star className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold mb-1">Creative Excellence</h3>
-              <p className="text-slate-400">
-                Our creative team ensures content aligns with both brand identity and audience preferences.
-              </p>
-            </div>
-          </li>
-        </ul>
-        <div className="mt-10 flex flex-wrap gap-4">
-          <button className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-blue-700 transition-all">
-            Request a Demo
-          </button>
-          <button className="bg-slate-700 text-white px-6 py-3 rounded-lg font-semibold hover:bg-slate-600 transition-all border border-slate-600">
-            Download Brochure
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
+      </section>
 
       {/* Services Section */}
       <section id="services" className="py-20 bg-slate-800">
@@ -421,8 +461,8 @@ const InfluencerAgency = () => {
             {teamMembers.map((member, index) => (
               <div key={index} className="text-center group">
                 <div className="relative mb-6 overflow-hidden rounded-2xl">
-                  <img 
-                    src={member.image} 
+                  <img
+                    src={member.image}
                     alt={member.name}
                     className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-110"
                   />
@@ -447,8 +487,8 @@ const InfluencerAgency = () => {
               const IconComponent = platform.icon;
               return (
                 <div key={index} className="bg-gradient-to-br from-slate-700 to-slate-800 p-8 rounded-2xl border border-blue-500/20 hover:border-blue-400/40 transition-all transform hover:scale-105 text-center">
-                  <IconComponent 
-                    className="w-16 h-16 mx-auto mb-4" 
+                  <IconComponent
+                    className="w-16 h-16 mx-auto mb-4"
                     style={{ color: platform.color }}
                   />
                   <h3 className="text-2xl font-bold mb-2">{platform.name}</h3>
@@ -474,17 +514,17 @@ const InfluencerAgency = () => {
               Explore our portfolio of successful campaigns and influencer collaborations
             </p>
           </div>
-          
+
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {videoGallery.map((video, index) => (
-              <div 
+              <div
                 key={index}
                 className="group relative overflow-hidden rounded-2xl cursor-pointer border border-slate-700 hover:border-blue-500 transition-all duration-300 transform hover:-translate-y-1"
                 onClick={() => openVideo(video.id)}
               >
                 <div className="relative">
-                  <img 
-                    src={video.thumbnail} 
+                  <img
+                    src={video.thumbnail}
                     alt={video.title}
                     className="w-full h-52 object-cover transition-transform duration-500 group-hover:scale-110"
                   />
@@ -532,22 +572,22 @@ const InfluencerAgency = () => {
             <div className="bg-gradient-to-br from-slate-700 to-slate-800 p-8 rounded-2xl border border-blue-500/20">
               <div className="space-y-6">
                 <div>
-                  <input 
-                    type="text" 
-                    placeholder="Your Name" 
+                  <input
+                    type="text"
+                    placeholder="Your Name"
                     className="w-full px-4 py-3 bg-slate-600 border border-slate-500 rounded-lg focus:border-blue-400 focus:outline-none transition-colors"
                   />
                 </div>
                 <div>
-                  <input 
-                    type="email" 
-                    placeholder="Your Email" 
+                  <input
+                    type="email"
+                    placeholder="Your Email"
                     className="w-full px-4 py-3 bg-slate-600 border border-slate-500 rounded-lg focus:border-blue-400 focus:outline-none transition-colors"
                   />
                 </div>
                 <div>
-                  <textarea 
-                    placeholder="Your Message" 
+                  <textarea
+                    placeholder="Your Message"
                     rows={4}
                     className="w-full px-4 py-3 bg-slate-600 border border-slate-500 rounded-lg focus:border-blue-400 focus:outline-none transition-colors resize-none"
                   ></textarea>

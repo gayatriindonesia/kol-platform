@@ -242,7 +242,7 @@ const CampaignPage = () => {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-500 to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br to-indigo-50">
       <AnimatePresence>
         {toast.show && <Toast />}
       </AnimatePresence>

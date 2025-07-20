@@ -49,7 +49,9 @@ export default async function BrandHomePage() {
                   <div className="p-2 bg-blue-100 rounded-lg">
                     <Users className="h-5 w-5 text-blue-600" />
                   </div>
-                  <h3 className="text-sm font-medium text-gray-600"><Link href={'/brand/brands'}>Total Brand</Link></h3>
+                  <h3 className="text-sm font-medium text-gray-600">
+                    <Link href="/brand/brands">Total Brand</Link>
+                  </h3>
                 </div>
               </div>
               <div className="space-y-1">
@@ -67,7 +69,9 @@ export default async function BrandHomePage() {
                   <div className="p-2 bg-green-100 rounded-lg">
                     <Target className="h-5 w-5 text-green-600" />
                   </div>
-                  <h3 className="text-sm font-medium text-gray-600"><Link href={'/brand/campaigns'}>Total Campaigns</Link></h3>
+                  <h3 className="text-sm font-medium text-gray-600">
+                    <Link href="/brand/campaigns">Total Campaigns</Link>
+                  </h3>
                 </div>
               </div>
               <div className="space-y-1">
@@ -85,7 +89,9 @@ export default async function BrandHomePage() {
                   <div className="p-2 bg-orange-100 rounded-lg">
                     <Activity className="h-5 w-5 text-orange-600" />
                   </div>
-                  <h3 className="text-sm font-medium text-gray-600"><Link href={'/brand/campaigns'}>Active Campaigns</Link></h3>
+                  <h3 className="text-sm font-medium text-gray-600">
+                    <Link href="/brand/campaigns">Active Campaigns</Link>
+                  </h3>
                 </div>
               </div>
               <div className="space-y-1">
@@ -231,6 +237,9 @@ export default async function BrandHomePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {brandNavigationItems.map((item) => {
               const Icon = item.icon
+              // Add type guard to ensure path exists
+              if (!item.path) return null
+              
               return (
                 <Link 
                   key={item.path} 

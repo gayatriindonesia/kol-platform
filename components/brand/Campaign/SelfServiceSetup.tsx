@@ -135,13 +135,13 @@ const SelfServiceSetup = () => {
 
   const handleSelectInfluencer = (influencerId: string) => {
     setSelectedInfluencers((prev) => {
-    const newValue = prev.includes(influencerId)
-      ? prev.filter((id) => id !== influencerId)
-      : [...prev, influencerId];
+      const newValue = prev.includes(influencerId)
+        ? prev.filter((id) => id !== influencerId)
+        : [...prev, influencerId];
 
-    console.log("🟢 selectedInfluencer IDs:", newValue); // Log ID yang dipilih user
-    return newValue;
-  });
+      console.log("🟢 selectedInfluencer IDs:", newValue); // Log ID yang dipilih user
+      return newValue;
+    });
   };
 
   const getPlatformIcon = (platformName: string) => {
@@ -538,17 +538,30 @@ const SelfServiceSetup = () => {
                           <h4 className="text-sm font-medium mb-1">Platform:</h4>
                           <ul className="space-y-2">
                             {influencer.platforms?.map((p: any) => (
-                              <li key={p.id} className="flex items-center justify-between text-sm">
-                                <span className="flex items-center gap-2">
+                              <li
+                                key={p.id}
+                                className="bg-gray-50 p-3 rounded-md text-sm flex flex-col sm:flex-row sm:justify-between sm:items-center"
+                              >
+                                <div className="flex items-center gap-2 mb-2 sm:mb-0">
                                   {getPlatformIcon(p.name)}
-                                  <span>{p.name}</span>
-                                </span>
-                                <span className="text-gray-600">
-                                  @{p.username} – {parseInt(p.followers).toLocaleString()} followers
-                                </span>
+                                  <span className="font-medium">{p.name}</span>
+                                  <span className="text-xs text-gray-500">@{p.username}</span>
+                                </div>
+                                <div className="flex flex-wrap gap-2 text-xs text-gray-600">
+                                  <span className="bg-white border px-2 py-0.5 rounded-full">
+                                    {parseInt(p.followers).toLocaleString()} followers
+                                  </span>
+                                  <span className="bg-white border px-2 py-0.5 rounded-full">
+                                    {p.posts ?? 0} posts
+                                  </span>
+                                  <span className="bg-white border px-2 py-0.5 rounded-full">
+                                    ER: {(p.engagementRate ?? 0).toFixed(2)}%
+                                  </span>
+                                </div>
                               </li>
                             ))}
                           </ul>
+
                         </div>
                       </div>
                     </DialogContent>
