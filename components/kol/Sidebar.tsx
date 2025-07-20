@@ -77,12 +77,12 @@ const Sidebar = ({ isMobile, session: initialSession }: SidebarProps) => {
       >
         <div className="p-4">
           <Link href="/kol" className="flex items-center">
-            <Image 
-              src="/images/logo.png" 
-              alt="Logo" 
-              width={32} 
-              height={32} 
-              className="h-8 w-8 mr-2" 
+            <Image
+              src="/images/logo.png"
+              alt="Logo"
+              width={32}
+              height={32}
+              className="h-8 w-8 mr-2"
             />
             <span className="text-xl font-bold">Gayatri Digital</span>
           </Link>
@@ -122,22 +122,26 @@ const Sidebar = ({ isMobile, session: initialSession }: SidebarProps) => {
           <div className="px-4 py-2 text-xs text-gray-400">MENU</div>
           <nav>
             <ul>
-              {kolNavigationItems.map((item) => {
-                const Icon = item.icon
-                return (
-                  <li key={item.path} className="px-4 py-2">
-                    <Link
-                      href={item.path}
-                      className={`flex items-center ${pathname === item.path ? 'bg-blue-600 text-white rounded-md px-4 py-2' : 'text-gray-300 hover:text-white hover:bg-gray-700 rounded-md px-4 py-2'
-                        } transition-colors duration-200`}
-                      onClick={() => isMobile && setIsOpen(false)}
-                    >
-                      <Icon size={18} className="mr-3" />
-                      {item.name}
-                    </Link>
-                  </li>
-                )
-              })}
+              {kolNavigationItems
+                .filter((item): item is typeof item & { path: string } => !!item.path)
+                .map((item) => {
+                  const Icon = item.icon
+                  return (
+                    <li key={item.path} className="px-4 py-2">
+                      <Link
+                        href={item.path}
+                        className={`flex items-center ${pathname === item.path
+                            ? 'bg-blue-600 text-white rounded-md px-4 py-2'
+                            : 'text-gray-300 hover:text-white hover:bg-gray-700 rounded-md px-4 py-2'
+                          } transition-colors duration-200`}
+                        onClick={() => isMobile && setIsOpen(false)}
+                      >
+                        <Icon size={18} className="mr-3" />
+                        {item.name}
+                      </Link>
+                    </li>
+                  )
+                })}
             </ul>
           </nav>
         </div>

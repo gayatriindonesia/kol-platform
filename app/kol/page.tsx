@@ -9,6 +9,7 @@ export default function KolHomePage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {kolNavigationItems.map((item) => {
           const Icon = item.icon
+          if (!item.path) return null
           return(
           <Link 
             key={item.path} 

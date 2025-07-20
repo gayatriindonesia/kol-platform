@@ -46,21 +46,21 @@ export default function Sidebar({ isMobile, session: initialSession }: SidebarPr
     <>
       {/* Mobile Hamburger Button */}
       {isMobile && (
-      <button
-        className="md:hidden fixed top-4 left-4 z-30 p-2 rounded-md bg-gray-800 text-white"
-        onClick={toggleSidebar}
-        aria-label="Toggle menu"
-      >
-        {isOpen ? (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        ) : (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        )}
-      </button>
+        <button
+          className="md:hidden fixed top-4 left-4 z-30 p-2 rounded-md bg-gray-800 text-white"
+          onClick={toggleSidebar}
+          aria-label="Toggle menu"
+        >
+          {isOpen ? (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          )}
+        </button>
       )}
 
       {/* Overlay untuk mobile ketika sidebar terbuka */}
@@ -122,22 +122,29 @@ export default function Sidebar({ isMobile, session: initialSession }: SidebarPr
           <div className="px-4 py-2 text-xs text-gray-400">MENU</div>
           <nav>
             <ul>
-              {adminNavigationItems.map((item) => {
-                const Icon = item.icon   // assign komponen ke variabel
-                return (
-                  <li key={item.path} className="px-4 py-2">
-                    <Link
-                      href={item.path}
-                      className={`flex items-center ${pathname === item.path ? 'bg-blue-600 text-white rounded-md px-4 py-2' : 'text-gray-300 hover:text-white hover:bg-gray-700 rounded-md px-4 py-2'
-                        } transition-colors duration-200`}
-                      onClick={() => isMobile && setIsOpen(false)}
-                    >
-                      <Icon size={18} className="mr-3" />
-                      {item.name}
-                    </Link>
-                  </li>
-                )
-              })}
+              <ul>
+                {adminNavigationItems
+                  .filter((item): item is typeof item & { path: string } => !!item.path)
+                  .map((item) => {
+                    const Icon = item.icon
+                    return (
+                      <li key={item.path} className="px-4 py-2">
+                        <Link
+                          href={item.path}
+                          className={`flex items-center ${pathname === item.path
+                              ? 'bg-blue-600 text-white rounded-md px-4 py-2'
+                              : 'text-gray-300 hover:text-white hover:bg-gray-700 rounded-md px-4 py-2'
+                            } transition-colors duration-200`}
+                          onClick={() => isMobile && setIsOpen(false)}
+                        >
+                          <Icon size={18} className="mr-3" />
+                          {item.name}
+                        </Link>
+                      </li>
+                    )
+                  })}
+              </ul>
+
             </ul>
           </nav>
         </div>
