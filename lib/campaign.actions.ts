@@ -100,7 +100,6 @@ export const createCampaign = async (data: CampaignFormData) => {
 };
 
 // GET ALL Campaign Fllter Role
-// GET ALL Campaign Filter Role - FIXED VERSION
 export const getAllCampaign = async () => {
   try {
     // request session
@@ -1077,3 +1076,47 @@ export const manualCampaignExpiryCheck = async () => {
     };
   }
 };
+
+// ambil data influencer yang sudah diundang ke campaign
+export async function getCampaignInfluencersById(campaignId: string) {
+  try {
+    const invitations = await db.campaignInvitation.findMany({
+      where: {
+        campaignId,
+        status: {
+          in: ['ACTIVE', 'COMPLETED'],
+        },
+      },
+      include: {
+        influencer: {
+          include: {
+            user: true,
+            platforms: {
+              include: {
+                platform: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const data = invitations.map(invitation => ({
+      id: invitation.id,
+      influencerId: invitation.influencer.id,
+      user: invitation.influencer.user,
+      platforms: invitation.influencer.platforms,
+}));
+    return {
+      success: true,
+      data
+    };
+  } catch (error) {
+    console.error('Error getting campaign influencers:', error);
+    return {
+      success: false,
+      message: 'Failed to get influencers',
+    };
+  }
+}
+

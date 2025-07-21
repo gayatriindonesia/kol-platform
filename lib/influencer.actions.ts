@@ -114,15 +114,33 @@ export async function getInfluencerById(id: string) {
 
     const userRole = session.user.role;
 
-    // Check if user is authorized to access this influencer
     if (userRole !== 'ADMIN') {
-      const influencer = await db.influencer.findUnique({
-        where: { id },
-        select: { userId: true },
-      });
+      if (userRole === 'INFLUENCER') {
+        const influencer = await db.influencer.findUnique({
+          where: { id },
+          select: { userId: true },
+        });
 
-      if (influencer?.userId !== session.user.id) {
-        return { error: "Forbidden", status: 403 };
+        if (influencer?.userId !== session.user.id) {
+          return { error: "Forbidden", status: 403 };
+        }
+      }
+
+      if (userRole === 'BRAND') {
+        const hasAccess = await db.campaignInvitation.findFirst({
+          where: {
+            influencerId: id,
+            campaign: {
+              brands: {
+                userId: session.user.id,
+              },
+            },
+          },
+        });
+
+        if (!hasAccess) {
+          return { error: "Forbidden", status: 403 };
+        }
       }
     }
 
@@ -148,6 +166,7 @@ export async function getInfluencerById(id: string) {
     return { error: "Failed to fetch influencer", status: 500 };
   }
 }
+
 
 // Update Influencer
 export async function updateInfluencer(id: string, data: UpdateInfluencerPayload) {

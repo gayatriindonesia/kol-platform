@@ -14,6 +14,7 @@ interface Campaign {
   name?: string;
   status?: string;
   description?: string;
+  type?: string;
   target?: string;
   budget?: number;
   createdAt?: string | Date;
@@ -44,6 +45,10 @@ interface TimeLeft {
   seconds: number;
 }
 
+// Dummy Data Influencer
+
+
+
 const CampaignDetailId: React.FC<CampaignDetailIdProps> = ({ campaign }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [stopping, setStopping] = useState(false);
@@ -70,32 +75,32 @@ const CampaignDetailId: React.FC<CampaignDetailIdProps> = ({ campaign }) => {
   };
 
   const updateCountdowns = useCallback(() => {
-  const now = new Date();
-  const startDate = campaign.startDate ? new Date(campaign.startDate) : null;
-  const endDate = campaign.endDate ? new Date(campaign.endDate) : null;
+    const now = new Date();
+    const startDate = campaign.startDate ? new Date(campaign.startDate) : null;
+    const endDate = campaign.endDate ? new Date(campaign.endDate) : null;
 
-  if (startDate && endDate) {
-    if (now < startDate) {
-      setCampaignStatus('upcoming');
-      setTimeUntilStart(calculateTimeLeft(startDate));
-      setTimeUntilEnd(null);
-    } else if (now >= startDate && now < endDate) {
-      setCampaignStatus('active');
-      setTimeUntilStart(null);
-      setTimeUntilEnd(calculateTimeLeft(endDate));
-    } else {
-      setCampaignStatus('ended');
-      setTimeUntilStart(null);
-      setTimeUntilEnd(null);
+    if (startDate && endDate) {
+      if (now < startDate) {
+        setCampaignStatus('upcoming');
+        setTimeUntilStart(calculateTimeLeft(startDate));
+        setTimeUntilEnd(null);
+      } else if (now >= startDate && now < endDate) {
+        setCampaignStatus('active');
+        setTimeUntilStart(null);
+        setTimeUntilEnd(calculateTimeLeft(endDate));
+      } else {
+        setCampaignStatus('ended');
+        setTimeUntilStart(null);
+        setTimeUntilEnd(null);
+      }
     }
-  }
-}, [campaign.startDate, campaign.endDate]);
+  }, [campaign.startDate, campaign.endDate]);
 
-useEffect(() => {
-  updateCountdowns();
-  const interval = setInterval(updateCountdowns, 1000);
-  return () => clearInterval(interval);
-}, [updateCountdowns]);
+  useEffect(() => {
+    updateCountdowns();
+    const interval = setInterval(updateCountdowns, 1000);
+    return () => clearInterval(interval);
+  }, [updateCountdowns]);
 
   const formatTimeUnit = (value: number, unit: string) => {
     return (
@@ -112,10 +117,13 @@ useEffect(() => {
     return (
       <Card className={`border-0 shadow-lg ${bgColor}`}>
         <CardHeader className="pb-3">
-          <CardTitle className={`flex items-center gap-2 ${textColor}`}>
-            <Timer className="w-5 h-5" />
-            {title}
+          <CardTitle className={`text-center ${textColor}`}>
+            <div className="flex justify-center items-center gap-2">
+              <Timer className="w-5 h-5" />
+              {title}
+            </div>
           </CardTitle>
+
         </CardHeader>
         <CardContent>
           <div className="flex justify-center gap-3">
@@ -134,14 +142,14 @@ useEffect(() => {
       case 'upcoming':
         return {
           message: 'Campaign akan dimulai dalam',
-          color: 'text-blue-600',
-          bgColor: 'bg-blue-50'
+          color: 'text-black-600',
+          bgColor: 'bg-gray-50'
         };
       case 'active':
         return {
           message: 'Campaign akan berakhir dalam',
-          color: 'text-green-600',
-          bgColor: 'bg-green-50'
+          color: 'text-black-600',
+          bgColor: 'bg-gray-50'
         };
       case 'ended':
         return {
@@ -189,7 +197,7 @@ useEffect(() => {
         } else {
           throw new Error(result.error || 'Gagal menghentikan campaign');
         }
-        
+
       } catch (error) {
         console.error('Error stopping campaign:', error);
         alert(`Terjadi kesalahan saat menghentikan campaign: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -205,7 +213,7 @@ useEffect(() => {
         return <CheckCircle className="w-4 h-4 text-green-500" />;
       case 'PAUSED':
         return <AlertCircle className="w-4 h-4 text-yellow-500" />;
-      case 'COMPLETE':
+      case 'COMPLETED':
       case 'COMPLETED':
       case 'ENDED':
         return <XCircle className="w-4 h-4 text-gray-500" />;
@@ -222,7 +230,7 @@ useEffect(() => {
         return 'bg-green-100 text-green-800 border-green-200';
       case 'PAUSED':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'COMPLETE':
+      case 'COMPLETED':
       case 'COMPLETED':
       case 'ENDED':
         return 'bg-gray-100 text-gray-800 border-gray-200';
@@ -279,7 +287,7 @@ useEffect(() => {
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Back Button */}
         <div className="mb-6">
-          <Link href="/campaigns">
+          <Link href="/brands/campaigns">
             <Button variant="outline" size="sm" className="mb-4">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Kembali ke Daftar Campaign
@@ -309,11 +317,12 @@ useEffect(() => {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Badge className={`${getStatusColor(campaign.status)} border px-3 py-1`}>
                     {getStatusIcon(campaign.status)}
                     <span className="ml-2 capitalize">{campaign.status?.toLowerCase() || 'Unknown'}</span>
                   </Badge>
+
                   <Button
                     variant="outline"
                     size="sm"
@@ -323,7 +332,21 @@ useEffect(() => {
                     <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
                     <span className="ml-1">Refresh</span>
                   </Button>
+
+                  {campaignStatus !== 'ended' && campaign.status?.toUpperCase() !== 'COMPLETED' && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleStopCampaign}
+                      disabled={stopping}
+                      className="flex items-center gap-2"
+                    >
+                      <StopCircle className={`w-4 h-4 ${stopping ? 'animate-spin' : ''}`} />
+                      {stopping ? 'Menghentikan...' : 'Hentikan Campaign'}
+                    </Button>
+                  )}
                 </div>
+
               </div>
             </CardContent>
           </Card>
@@ -334,14 +357,14 @@ useEffect(() => {
               {timeUntilStart && renderCountdown(
                 timeUntilStart,
                 'Campaign Akan Dimulai',
-                'bg-blue-50 border-blue-200',
-                'text-blue-700'
+                'bg-gray-50 border-gray-200',
+                'text-black-700'
               )}
               {timeUntilEnd && renderCountdown(
                 timeUntilEnd,
                 'Campaign Akan Berakhir',
-                'bg-orange-50 border-orange-200',
-                'text-orange-700'
+                'bg-gray-50 border-gray-200',
+                'text-black-700'
               )}
             </div>
           )}
@@ -367,6 +390,10 @@ useEffect(() => {
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-600">Tipe Campaign</label>
+                  <p className="text-lg font-semibold text-gray-900">{campaign.type}</p>
+                </div>
+                <div className="space-y-1">
                   <label className="text-sm font-medium text-gray-600">Budget</label>
                   <p className="text-lg font-semibold text-gray-900">{formatCurrency(campaign.budget)}</p>
                 </div>
@@ -385,8 +412,8 @@ useEffect(() => {
                 <div className="space-y-1">
                   <label className="text-sm font-medium text-gray-600">Status Campaign</label>
                   <p className={`text-lg font-semibold ${countdownStatus.color}`}>
-                    {campaignStatus === 'upcoming' ? 'Akan Dimulai' : 
-                     campaignStatus === 'active' ? 'Sedang Berjalan' : 'Telah Berakhir'}
+                    {campaignStatus === 'upcoming' ? 'Akan Dimulai' :
+                      campaignStatus === 'active' ? 'Sedang Berjalan' : 'Telah Berakhir'}
                   </p>
                 </div>
                 <div className="space-y-1">
@@ -394,7 +421,7 @@ useEffect(() => {
                   <p className="text-lg font-semibold text-gray-900">{formatDate(campaign.createdAt)}</p>
                 </div>
               </div>
-              
+
               {campaign.description && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-600">Deskripsi</label>
@@ -429,40 +456,6 @@ useEffect(() => {
             </CardContent>
           </Card>
 
-          {/* Action Buttons */}
-          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-            <CardContent className="p-6">
-              <div className="flex flex-wrap gap-3 justify-end">
-                {/**
-                <Button
-                  variant="outline"
-                  onClick={handleEdit}
-                  className="flex items-center gap-2"
-                >
-                  <Edit className="w-4 h-4" />
-                  Edit Campaign
-                </Button>
-                 */}
-                {/* Hanya tampilkan tombol stop jika campaign sedang aktif atau belum berakhir */}
-                {campaignStatus !== 'ended' && campaign.status?.toUpperCase() !== 'COMPLETED' && (
-                  <Button
-                    variant="destructive"
-                    onClick={handleStopCampaign}
-                    disabled={stopping}
-                    className="flex items-center gap-2"
-                  >
-                    <StopCircle className={`w-4 h-4 ${stopping ? 'animate-spin' : ''}`} />
-                    {stopping ? 'Menghentikan...' : 'Hentikan Campaign'}
-                  </Button>
-                )}
-                {campaignStatus === 'ended' && (
-                  <div className="text-sm text-gray-600 py-2">
-                    Campaign telah berakhir secara otomatis
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>

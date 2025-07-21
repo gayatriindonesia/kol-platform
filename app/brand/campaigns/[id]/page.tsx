@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, FileText } from 'lucide-react';
 import CampaignDetailId from '@/components/brand/Campaign/CampaignDetailId';
+import CampaignListInfluencer from '@/components/brand/Campaign/CampaignListInfluencer';
 
 interface Campaign {
     id: string;
@@ -12,6 +13,7 @@ interface Campaign {
     status?: string;
     description?: string;
     target?: string;
+    type?: string;
     budget?: number;
     createdAt?: string | Date;
     updatedAt?: string | Date;
@@ -47,11 +49,11 @@ export const dynamic = 'force-dynamic';
 
 const CampaignDetailPage = async ({ params }: CampaignDetailPageProps) => {
     const { id } = params;
-    
+
     try {
         // 1. Ambil data campaign
         const campaignResponse: CampaignResponse = await getCampaignById(id);
-        
+
         if (!campaignResponse || !campaignResponse.success || !campaignResponse.campaign) {
             return (
                 <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -79,39 +81,47 @@ const CampaignDetailPage = async ({ params }: CampaignDetailPageProps) => {
         }
 
         let campaign = campaignResponse.campaign;
+        console.log('Campaign data fetched:', campaign);
 
         // 2. Cek apakah campaign sudah berakhir dan perlu diupdate
         if (campaign.endDate && campaign.status === 'ACTIVE') {
             const currentDate = new Date();
             const endDate = new Date(campaign.endDate);
-            
+
             // Jika campaign sudah berakhir, lakukan update
             if (endDate < currentDate) {
                 console.log(`Campaign ${campaign.id} has expired, updating status...`);
-                
+
                 try {
                     const expiryCheckResult = await checkCampaignExpiry(campaign.id);
-                    
+
                     if (expiryCheckResult.success && expiryCheckResult.wasExpired) {
                         // Update status campaign di object local
                         campaign = {
                             ...campaign,
-                            status: 'COMPLETE',
+                            status: 'COMPLETED',
                             updatedAt: new Date()
                         };
-                        
+
                         console.log(`Campaign ${campaign.id} status updated to COMPLETE`);
                     }
                 } catch (expiryError) {
                     console.error('Error checking campaign expiry:', expiryError);
-                    // Jangan throw error, tetap tampilkan campaign dengan status lama
                 }
             }
         }
 
         // 3. Render component dengan data campaign yang sudah diupdate
-        return <CampaignDetailId campaign={campaign} />;
-        
+        return (
+            <>
+                <CampaignDetailId campaign={campaign} />
+                <div className="container mx-auto px-4 py-8 max-w-6xl">
+                    {/* Influencer Terpilih Section */}
+                    <CampaignListInfluencer campaignId={campaign.id} />
+                </div>
+            </>
+        )
+
     } catch (error) {
         console.error('Error fetching campaign:', error);
         return (

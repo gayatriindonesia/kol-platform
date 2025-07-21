@@ -6,6 +6,7 @@ import { Pencil, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Influencer } from "@/types/influencer"
 import { Badge } from "../ui/badge"
+import Link from "next/link"
 // import { PlatformWithServices } from "@/types/platform"
 // export type PlatformColumn = Platform
 
@@ -101,15 +102,19 @@ export const columns: ColumnDef<Influencer>[] = [
   {
     id: "actions",
     cell: ({ row }) => {
-      const brands = row.original;
-
+      const influencer = row.original;
       return (
         <div className="flex gap-2">
+          <Link href={`/admin/influencers/${influencer.id}`}>
+            <Button variant="outline" size="sm">
+              Detail
+            </Button>
+          </Link>
           <Button
             variant="outline"
             size="icon"
             onClick={() => {
-              const event = new CustomEvent("edit-influencer", { detail: brands });
+              const event = new CustomEvent("edit-influencer", { detail: influencer });
               window.dispatchEvent(event);
             }}
           >
@@ -120,7 +125,7 @@ export const columns: ColumnDef<Influencer>[] = [
             size="icon"
             onClick={() => {
               const event = new CustomEvent("delete-influencer", {
-                detail: brands,
+                detail: influencer,
               })
               window.dispatchEvent(event)
             }}

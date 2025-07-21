@@ -4,27 +4,170 @@ import { Users, Target, TrendingUp, Activity } from 'lucide-react'
 import { getAllBrand } from '@/lib/brand.actions'
 import { getAllCampaign } from '@/lib/campaign.actions'
 
+// Type definitions
+interface Brand {
+  id: string
+  name: string
+  createdAt?: Date
+  created_at?: Date
+  [key: string]: any
+}
+
+interface Campaign {
+  id: string
+  name: string
+  status?: string
+  createdAt?: Date
+  created_at?: Date
+  [key: string]: any
+}
+
+interface MonthlyData {
+  month: string
+  brands: number
+  campaigns: number
+}
+
+interface CampaignStatus {
+  active: number
+  pending: number
+  completed: number
+  activePercentage: number
+  pendingPercentage: number
+  completedPercentage: number
+}
+
 export default async function BrandHomePage() {
   const brandsResponse = await getAllBrand()
   const campaignsResponse = await getAllCampaign()
 
   // Extract data dari response
-  const brands = brandsResponse?.data || []
-  const campaigns = campaignsResponse?.data || []
-  console.log('TotalCampaigns:', campaigns)
+  const brands: Brand[] = brandsResponse?.data || []
+  const campaigns: Campaign[] = campaignsResponse?.data || []
   
   const brandsCount = brands.length
   const campaignsCount = campaigns.length
-  const activeCampaigns = Math.floor(campaignsCount * 0.7)
 
-  // Data untuk chart sederhana
-  const monthlyData = [
-    { month: 'Jan', brands: Math.floor(brandsCount * 0.6), campaigns: Math.floor(campaignsCount * 0.7) },
-    { month: 'Feb', brands: Math.floor(brandsCount * 0.8), campaigns: Math.floor(campaignsCount * 0.9) },
-    { month: 'Mar', brands: Math.floor(brandsCount * 0.9), campaigns: Math.floor(campaignsCount * 1.0) },
-    { month: 'Apr', brands: Math.floor(brandsCount * 0.95), campaigns: Math.floor(campaignsCount * 1.1) },
-    { month: 'May', brands: brandsCount, campaigns: campaignsCount },
-  ]
+  // Fungsi untuk menghitung status campaign dinamis
+  const calculateCampaignStatus = (): CampaignStatus => {
+    if (campaigns.length === 0) {
+      return {
+        active: 0,
+        pending: 0,
+        completed: 0,
+        activePercentage: 0,
+        pendingPercentage: 0,
+        completedPercentage: 0
+      }
+    }
+
+    // Hitung berdasarkan status field yang ada di data campaign
+    const statusCounts = campaigns.reduce((acc, campaign) => {
+      const status = campaign.status?.toLowerCase() || 'pending'
+      
+      if (status === 'active' || status === 'running' || status === 'live') {
+        acc.active++
+      } else if (status === 'completed' || status === 'finished' || status === 'ended') {
+        acc.completed++
+      } else {
+        acc.pending++
+      }
+      
+      return acc
+    }, { active: 0, pending: 0, completed: 0 })
+
+    const total = campaigns.length
+    return {
+      ...statusCounts,
+      activePercentage: Math.round((statusCounts.active / total) * 100),
+      pendingPercentage: Math.round((statusCounts.pending / total) * 100),
+      completedPercentage: Math.round((statusCounts.completed / total) * 100)
+    }
+  }
+
+  // Fungsi untuk menghitung trend bulanan dinamis
+  const calculateMonthlyTrend = (): MonthlyData[] => {
+    const currentDate = new Date()
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    
+    // Generate 5 bulan terakhir
+    const monthlyData: MonthlyData[] = []
+    for (let i = 4; i >= 0; i--) {
+      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1)
+      const monthName = monthNames[date.getMonth()]
+      const year = date.getFullYear()
+      
+      // Filter brands dan campaigns berdasarkan bulan pembuatan
+      const brandsInMonth = brands.filter(brand => {
+        const brandDate = new Date(brand.createdAt || brand.created_at || '')
+        return brandDate.getMonth() === date.getMonth() && brandDate.getFullYear() === year
+      }).length
+
+      const campaignsInMonth = campaigns.filter(campaign => {
+        const campaignDate = new Date(campaign.createdAt || campaign.created_at || '')
+        return campaignDate.getMonth() === date.getMonth() && campaignDate.getFullYear() === year
+      }).length
+
+      // Jika tidak ada data createdAt, gunakan distribusi kumulatif
+      const cumulativeBrands = brandsInMonth > 0 ? brandsInMonth : Math.max(1, Math.floor(brandsCount * (0.6 + (4-i) * 0.1)))
+      const cumulativeCampaigns = campaignsInMonth > 0 ? campaignsInMonth : Math.max(1, Math.floor(campaignsCount * (0.6 + (4-i) * 0.1)))
+
+      monthlyData.push({
+        month: monthName,
+        brands: cumulativeBrands,
+        campaigns: cumulativeCampaigns
+      })
+    }
+
+    return monthlyData
+  }
+
+  // Fungsi untuk menghitung persentase pertumbuhan
+  const calculateGrowthRate = (): number => {
+    if (brands.length === 0 && campaigns.length === 0) return 0
+    
+    const currentDate = new Date()
+    const lastMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
+    const twoMonthsAgo = new Date(currentDate.getFullYear(), currentDate.getMonth() - 2, 1)
+    
+    // Hitung data bulan lalu dan 2 bulan lalu
+    const lastMonthData = brands.filter(brand => {
+      const brandDate = new Date(brand.createdAt || brand.created_at || '')
+      return brandDate >= lastMonth && brandDate < currentDate
+    }).length + campaigns.filter(campaign => {
+      const campaignDate = new Date(campaign.createdAt || campaign.created_at || '')
+      return campaignDate >= lastMonth && campaignDate < currentDate
+    }).length
+
+    const twoMonthsAgoData = brands.filter(brand => {
+      const brandDate = new Date(brand.createdAt || brand.created_at || '')
+      return brandDate >= twoMonthsAgo && brandDate < lastMonth
+    }).length + campaigns.filter(campaign => {
+      const campaignDate = new Date(campaign.createdAt || campaign.created_at || '')
+      return campaignDate >= twoMonthsAgo && campaignDate < lastMonth
+    }).length
+
+    if (twoMonthsAgoData === 0) return lastMonthData > 0 ? 100 : 0
+    
+    const growthRate = Math.round(((lastMonthData - twoMonthsAgoData) / twoMonthsAgoData) * 100)
+    return growthRate
+  }
+
+  const campaignStatus = calculateCampaignStatus()
+  const monthlyTrendData = calculateMonthlyTrend()
+  const growthRate = calculateGrowthRate()
+
+  // Hitung perubahan dari bulan lalu untuk brands dan campaigns
+  const calculateMonthlyChange = (data: MonthlyData[], type: 'brands' | 'campaigns'): number => {
+    if (data.length < 2) return 0
+    const current = data[data.length - 1][type]
+    const previous = data[data.length - 2][type]
+    if (previous === 0) return current > 0 ? 100 : 0
+    return Math.round(((current - previous) / previous) * 100)
+  }
+
+  const brandChange = calculateMonthlyChange(monthlyTrendData, 'brands')
+  const campaignChange = calculateMonthlyChange(monthlyTrendData, 'campaigns')
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
@@ -56,7 +199,9 @@ export default async function BrandHomePage() {
               </div>
               <div className="space-y-1">
                 <div className="text-2xl font-bold text-gray-900">{brandsCount}</div>
-                <p className="text-xs text-green-600">+12% dari bulan lalu</p>
+                <p className={`text-xs ${brandChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {brandChange >= 0 ? '+' : ''}{brandChange}% dari bulan lalu
+                </p>
               </div>
             </div>
           </div>
@@ -76,7 +221,9 @@ export default async function BrandHomePage() {
               </div>
               <div className="space-y-1">
                 <div className="text-2xl font-bold text-gray-900">{campaignsCount}</div>
-                <p className="text-xs text-green-600">+8% dari bulan lalu</p>
+                <p className={`text-xs ${campaignChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {campaignChange >= 0 ? '+' : ''}{campaignChange}% dari bulan lalu
+                </p>
               </div>
             </div>
           </div>
@@ -95,8 +242,8 @@ export default async function BrandHomePage() {
                 </div>
               </div>
               <div className="space-y-1">
-                <div className="text-2xl font-bold text-gray-900">{activeCampaigns}</div>
-                <p className="text-xs text-orange-600">70% dari total campaign</p>
+                <div className="text-2xl font-bold text-gray-900">{campaignStatus.active}</div>
+                <p className="text-xs text-orange-600">{campaignStatus.activePercentage}% dari total campaign</p>
               </div>
             </div>
           </div>
@@ -113,7 +260,9 @@ export default async function BrandHomePage() {
                 </div>
               </div>
               <div className="space-y-1">
-                <div className="text-2xl font-bold text-gray-900">+15%</div>
+                <div className={`text-2xl font-bold ${growthRate >= 0 ? 'text-gray-900' : 'text-red-600'}`}>
+                  {growthRate >= 0 ? '+' : ''}{growthRate}%
+                </div>
                 <p className="text-xs text-purple-600">Pertumbuhan bulanan</p>
               </div>
             </div>
@@ -122,7 +271,7 @@ export default async function BrandHomePage() {
 
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Simple Bar Chart */}
+          {/* Dynamic Bar Chart */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -133,7 +282,7 @@ export default async function BrandHomePage() {
               </p>
             </div>
             <div className="space-y-4">
-              {monthlyData.map((data) => (
+              {monthlyTrendData.map((data) => (
                 <div key={data.month} className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="font-medium text-gray-700">{data.month}</span>
@@ -143,13 +292,17 @@ export default async function BrandHomePage() {
                     <div className="flex-1 bg-gray-200 rounded-full h-2">
                       <div 
                         className="bg-blue-500 h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${(data.brands / Math.max(...monthlyData.map(d => d.brands))) * 100}%` }}
+                        style={{ 
+                          width: `${monthlyTrendData.length > 0 ? (data.brands / Math.max(...monthlyTrendData.map(d => d.brands))) * 100 : 0}%` 
+                        }}
                       ></div>
                     </div>
                     <div className="flex-1 bg-gray-200 rounded-full h-2">
                       <div 
                         className="bg-green-500 h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${(data.campaigns / Math.max(...monthlyData.map(d => d.campaigns))) * 100}%` }}
+                        style={{ 
+                          width: `${monthlyTrendData.length > 0 ? (data.campaigns / Math.max(...monthlyTrendData.map(d => d.campaigns))) * 100 : 0}%` 
+                        }}
                       ></div>
                     </div>
                   </div>
@@ -168,7 +321,7 @@ export default async function BrandHomePage() {
             </div>
           </div>
 
-          {/* Status Overview */}
+          {/* Dynamic Status Overview */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -185,8 +338,8 @@ export default async function BrandHomePage() {
                   <span className="font-medium text-gray-900">Active Campaigns</span>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold text-gray-900">{Math.floor(campaignsCount * 0.7)}</div>
-                  <div className="text-xs text-gray-500">70%</div>
+                  <div className="font-bold text-gray-900">{campaignStatus.active}</div>
+                  <div className="text-xs text-gray-500">{campaignStatus.activePercentage}%</div>
                 </div>
               </div>
               
@@ -196,8 +349,8 @@ export default async function BrandHomePage() {
                   <span className="font-medium text-gray-900">Pending Campaigns</span>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold text-gray-900">{Math.floor(campaignsCount * 0.2)}</div>
-                  <div className="text-xs text-gray-500">20%</div>
+                  <div className="font-bold text-gray-900">{campaignStatus.pending}</div>
+                  <div className="text-xs text-gray-500">{campaignStatus.pendingPercentage}%</div>
                 </div>
               </div>
               
@@ -207,17 +360,26 @@ export default async function BrandHomePage() {
                   <span className="font-medium text-gray-900">Completed Campaigns</span>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold text-gray-900">{Math.floor(campaignsCount * 0.1)}</div>
-                  <div className="text-xs text-gray-500">10%</div>
+                  <div className="font-bold text-gray-900">{campaignStatus.completed}</div>
+                  <div className="text-xs text-gray-500">{campaignStatus.completedPercentage}%</div>
                 </div>
               </div>
 
-              {/* Visual Progress Bar */}
+              {/* Dynamic Visual Progress Bar */}
               <div className="mt-6">
                 <div className="flex rounded-full overflow-hidden h-3">
-                  <div className="bg-blue-500 flex-1" style={{ flex: '0.7' }}></div>
-                  <div className="bg-green-500 flex-1" style={{ flex: '0.2' }}></div>
-                  <div className="bg-yellow-500 flex-1" style={{ flex: '0.1' }}></div>
+                  <div 
+                    className="bg-blue-500" 
+                    style={{ width: `${campaignStatus.activePercentage}%` }}
+                  ></div>
+                  <div 
+                    className="bg-green-500" 
+                    style={{ width: `${campaignStatus.pendingPercentage}%` }}
+                  ></div>
+                  <div 
+                    className="bg-yellow-500" 
+                    style={{ width: `${campaignStatus.completedPercentage}%` }}
+                  ></div>
                 </div>
               </div>
             </div>
