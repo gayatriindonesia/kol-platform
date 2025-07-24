@@ -89,3 +89,27 @@ export type CampaignFormData = {
     influencerName: string;
   }[];
 };
+
+export type CampaignStatus = 'PENDING' | 'ACTIVE' | 'REJECTED'
+
+export type Campaign = {
+  id: string
+  name: string
+  type: string
+  status: CampaignStatus
+  description: string
+  budget: number
+  startDate: string
+  endDate: string
+  targetAudience: string
+  createdAt: string
+  brands: {
+    name: string
+    email: string
+    userId: string
+    user: {
+      name: string
+      email: string
+    }
+  }
+}

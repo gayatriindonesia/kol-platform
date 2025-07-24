@@ -1,7 +1,7 @@
 "use server";
 
 import { CampaignFormData } from "@/types/campaign";
-import { Prisma, CampaignStatus, CampaignInvitation} from "@prisma/client";
+import { Prisma, CampaignStatus, CampaignInvitation } from "@prisma/client";
 import { db } from "./db";
 import { auth } from "@/auth";
 import { generateId } from '@/lib/utils';
@@ -499,7 +499,7 @@ export async function debugCampaignInvitation(invitationId: string, influencerId
         brand: true
       }
     });
-    
+
     console.log('Invitation by ID:', invitationById);
 
     // 2. Cek semua invitation untuk influencer ini
@@ -513,17 +513,17 @@ export async function debugCampaignInvitation(invitationId: string, influencerId
         createdAt: true
       }
     });
-    
+
     console.log('All invitations for influencer:', allInvitations);
 
     // 3. Cek invitation dengan status PENDING saja
     const pendingInvitations = await db.campaignInvitation.findMany({
-      where: { 
+      where: {
         influencerId,
         status: 'PENDING' // Gunakan string literal dulu
       }
     });
-    
+
     console.log('Pending invitations:', pendingInvitations);
 
     return {
@@ -588,7 +588,7 @@ export async function respondToCampaignInvitation({
       // Jalankan debug function
       const debugResult = await debugCampaignInvitation(invitationId, influencerId);
       console.log('Debug result:', debugResult);
-      
+
       return {
         success: false,
         error: 'Invitation not found. Check console for debug info.',
@@ -605,7 +605,7 @@ export async function respondToCampaignInvitation({
 
     // Lanjutkan dengan update seperti biasa
     const newStatus = response === 'ACCEPTED' ? 'ACTIVE' : 'REJECTED';
-    
+
     const updatedInvitation = await db.campaignInvitation.update({
       where: { id: invitationId },
       data: {
@@ -633,7 +633,7 @@ export async function respondToCampaignInvitation({
     if (newStatus === 'ACTIVE') {
       await db.campaign.update({
         where: { id: invitation.campaignId },
-        data: { 
+        data: {
           status: 'ACTIVE',
           updatedAt: new Date(),
         }
@@ -654,7 +654,7 @@ export async function respondToCampaignInvitation({
       if (remainingInvitations.length === 0) {
         await db.campaign.update({
           where: { id: invitation.campaignId },
-          data: { 
+          data: {
             status: 'REJECTED',
             updatedAt: new Date(),
           }
@@ -707,7 +707,7 @@ export async function debugInvitation(invitationId: string) {
         brand: true,
       }
     });
-    
+
     console.log('Debug invitation:', invitation);
     return invitation;
   } catch (error) {
@@ -804,12 +804,12 @@ export async function getAllInfluencerInvitations(
     });
 
     console.log(
-    invitations.map((i) => ({
-      id: i.id,
-      campaignId: i.campaignId,
-      campaign: i.campaign?.name ?? '❌ campaign NULL',
-    }))
-  );
+      invitations.map((i) => ({
+        id: i.id,
+        campaignId: i.campaignId,
+        campaign: i.campaign?.name ?? 'campaign NULL',
+      }))
+    );
 
     return {
       success: true,
@@ -828,13 +828,12 @@ export async function getAllInfluencerInvitations(
 export const updateExpiredCampaigns = async () => {
   try {
     const session = await auth();
-    
+
     if (!session?.user?.id) {
       return { success: false, message: "Unauthorized" };
     }
-
     const currentDate = new Date();
-    
+
     // Cari semua campaign yang sudah berakhir tapi statusnya masih ACTIVE
     const expiredCampaigns = await db.campaign.findMany({
       where: {
@@ -852,8 +851,8 @@ export const updateExpiredCampaigns = async () => {
     });
 
     if (expiredCampaigns.length === 0) {
-      return { 
-        success: true, 
+      return {
+        success: true,
         message: "No expired campaigns found",
         updatedCount: 0
       };
@@ -980,7 +979,7 @@ export const checkCampaignExpiry = async (campaignId: string) => {
 
         if (brand?.userId) {
           await createNotification({
-            userId: brand.userId,
+            userId: campaign.brandId,
             type: 'SYSTEM',
             title: 'Campaign Completed',
             message: `Your campaign "${campaign.name}" has been completed`,
@@ -1051,7 +1050,7 @@ export const setupCampaignExpiryCheck = async () => {
 export const manualCampaignExpiryCheck = async () => {
   try {
     const session = await auth();
-    
+
     if (!session?.user?.id) {
       return { success: false, message: "Unauthorized" };
     }
@@ -1106,7 +1105,7 @@ export async function getCampaignInfluencersById(campaignId: string) {
       influencerId: invitation.influencer.id,
       user: invitation.influencer.user,
       platforms: invitation.influencer.platforms,
-}));
+    }));
     return {
       success: true,
       data
@@ -1120,3 +1119,449 @@ export async function getCampaignInfluencersById(campaignId: string) {
   }
 }
 
+// Tambahkan fungsi ini ke dalam file campaign.actions.ts
+export const updateCampaignStatus = async (campaignId: string, status: CampaignStatus) => {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return { success: false, message: "Unauthorized" };
+    }
+
+    // Check if user is admin or owns the campaign
+    const user = await db.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true }
+    });
+
+    if (!user) {
+      return { success: false, message: "User not found" };
+    }
+
+    let campaign;
+
+    if (user.role === 'ADMIN') {
+      // Admin can update any campaign
+      campaign = await db.campaign.findUnique({
+        where: { id: campaignId },
+        select: { id: true, brandId: true, name: true }
+      });
+    } else {
+      // Non-admin users (Brand) can only update their own campaigns
+      const brand = await db.brand.findFirst({
+        where: { userId: session.user.id }
+      });
+
+      if (!brand) {
+        return { success: false, message: "Brand not found" };
+      }
+
+      campaign = await db.campaign.findFirst({
+        where: {
+          id: campaignId,
+          brandId: brand.id
+        },
+        select: { id: true, brandId: true, name: true }
+      });
+    }
+
+    if (!campaign) {
+      return { success: false, message: "Campaign not found or unauthorized" };
+    }
+
+    // Update campaign status
+    const updatedCampaign = await db.campaign.update({
+      where: { id: campaignId },
+      data: {
+        status: status,
+        updatedAt: new Date()
+      },
+      include: {
+        brands: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // If status is being set to COMPLETED, also update related invitations
+    if (status === 'COMPLETED') {
+      await db.campaignInvitation.updateMany({
+        where: {
+          campaignId: campaignId,
+          status: 'ACTIVE'
+        },
+        data: {
+          status: 'COMPLETED',
+          updatedAt: new Date()
+        }
+      });
+
+      // Send notification to brand owner
+      try {
+        await createNotification({
+          userId: updatedCampaign.brands.userId,
+          type: 'SYSTEM',
+          title: 'Campaign Stopped',
+          message: `Your campaign "${updatedCampaign.name}" has been stopped`,
+          data: {
+            campaignId: updatedCampaign.id,
+            stoppedAt: new Date().toISOString(),
+            stoppedBy: session.user.id
+          }
+        });
+      } catch (notifError) {
+        console.error('Failed to send campaign stop notification:', notifError);
+      }
+    }
+
+    // If status is being set to ACTIVE, update related invitations
+    if (status === 'ACTIVE') {
+      // Only update invitations that are currently PENDING
+      await db.campaignInvitation.updateMany({
+        where: {
+          campaignId: campaignId,
+          status: 'PENDING'
+        },
+        data: {
+          status: 'ACTIVE',
+          updatedAt: new Date()
+        }
+      });
+    }
+
+    // Revalidate the campaigns page
+    revalidatePath('/campaigns');
+    revalidatePath(`/campaigns/${campaignId}`);
+
+    return {
+      success: true,
+      message: `Campaign status updated to ${status}`,
+      campaign: updatedCampaign
+    };
+
+  } catch (error) {
+    console.error("Error updating campaign status:", error);
+    return {
+      success: false,
+      message: "Failed to update campaign status",
+      error: error instanceof Error ? error.message : "Unknown error"
+    };
+  }
+};
+
+// Campaign Type DIRECRT APPROVAL BY ADMIN
+export const getPendingDirectCampaigns = async () => {
+  const session = await auth()
+
+  if (!session?.user?.id) {
+    return { success: false, message: 'Unauthorized', campaigns: [] }
+  }
+
+  const user = await db.user.findUnique({
+    where: { id: session.user.id },
+    select: { role: true }
+  })
+
+  if (!user || user.role !== 'ADMIN') {
+    return { success: false, message: 'Only admin can access this', campaigns: [] }
+  }
+
+  try {
+    const campaigns = await db.campaign.findMany({
+      where: {
+        type: 'DIRECT',
+        status: 'PENDING',
+      },
+      include: {
+        brands: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    })
+
+    return {
+      success: true,
+      campaigns
+    }
+  } catch (error) {
+    console.error('Error fetching pending campaigns:', error)
+    return {
+      success: false,
+      message: 'Internal error',
+      campaigns: []
+    }
+  }
+}
+
+export const approveCampaignByAdmin = async (campaignId: string) => {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return { success: false, message: "Unauthorized" };
+    }
+
+    // Cek role admin
+    const user = await db.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true }
+    });
+
+    if (!user || user.role !== 'ADMIN') {
+      return { success: false, message: "Only admin can approve campaigns" };
+    }
+
+    // Ambil campaign yang bertipe Direct dan status PENDING
+    const campaign = await db.campaign.findFirst({
+      where: {
+        id: campaignId,
+        type: 'DIRECT',
+        status: 'PENDING'
+      },
+      include: {
+        brands: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!campaign) {
+      return { success: false, message: "Campaign not found or already approved" };
+    }
+
+    if (campaign.type === 'DIRECT' && user.role !== 'ADMIN') {
+      return {
+        success: false,
+        message: "Only admin can approve Direct campaigns"
+      };
+    }
+
+
+    // Ubah status campaign ke ACTIVE
+    const updatedCampaign = await db.campaign.update({
+      where: { id: campaignId },
+      data: {
+        status: 'ACTIVE',
+        updatedAt: new Date()
+      }
+    });
+
+    // Optional: Ubah semua invitation yang masih PENDING jadi ACTIVE
+    await db.campaignInvitation.updateMany({
+      where: {
+        campaignId,
+        status: 'PENDING'
+      },
+      data: {
+        status: 'ACTIVE',
+        updatedAt: new Date()
+      }
+    });
+
+    // Kirim notifikasi ke brand
+    try {
+      await createNotification({
+        userId: campaign.brands.userId,
+        type: 'SYSTEM',
+        title: 'Campaign Approved',
+        message: `Your campaign "${campaign.name}" has been approved and is now active.`,
+        data: {
+          campaignId: campaign.id,
+          approvedAt: new Date().toISOString()
+        }
+      });
+    } catch (error) {
+      console.error('Failed to send approval notification:', error);
+    }
+
+    revalidatePath(`/campaigns/${campaignId}`);
+    return {
+      success: true,
+      message: "Campaign approved successfully",
+      campaign: updatedCampaign
+    };
+
+  } catch (error) {
+    console.error("Error approving campaign:", error);
+    return {
+      success: false,
+      message: "Failed to approve campaign",
+      error: error instanceof Error ? error.message : "Unknown error"
+    };
+  }
+};
+
+export const rejectCampaignByAdmin = async (campaignId: string, reason?: string) => {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, message: "Unauthorized" };
+    }
+
+    // Cek role admin
+    const user = await db.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true }
+    });
+
+    if (!user || user.role !== 'ADMIN') {
+      return { success: false, message: "Only admin can reject campaigns" };
+    }
+
+    // Ambil campaign yang bertipe Direct dan status PENDING
+    const campaign = await db.campaign.findFirst({
+      where: {
+        id: campaignId,
+        type: 'DIRECT',
+        status: 'PENDING'
+      },
+      include: {
+        brands: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!campaign) {
+      return { success: false, message: "Campaign not found or already processed" };
+    }
+
+    // Ubah status campaign ke REJECTED
+    const updatedCampaign = await db.campaign.update({
+      where: { id: campaignId },
+      data: {
+        status: 'REJECTED',
+        updatedAt: new Date(),
+        // Jika Anda memiliki field untuk reason rejection, tambahkan di sini
+        // rejectionReason: reason
+      }
+    });
+
+    // Ubah semua invitation yang masih PENDING jadi REJECTED
+    await db.campaignInvitation.updateMany({
+      where: {
+        campaignId,
+        status: 'PENDING'
+      },
+      data: {
+        status: 'REJECTED',
+        updatedAt: new Date()
+      }
+    });
+
+    // Kirim notifikasi ke brand
+    try {
+      await createNotification({
+        userId: campaign.brands.userId,
+        type: 'SYSTEM',
+        title: 'Campaign Rejected',
+        message: `Your campaign "${campaign.name}" has been rejected. ${reason ? `Reason: ${reason}` : 'Please contact admin for more details.'}`,
+        data: {
+          campaignId: campaign.id,
+          rejectedAt: new Date().toISOString(),
+          reason: reason || null
+        }
+      });
+    } catch (error) {
+      console.error('Failed to send rejection notification:', error);
+    }
+
+    revalidatePath(`/campaigns/${campaignId}`);
+    
+    return {
+      success: true,
+      message: "Campaign rejected successfully",
+      campaign: updatedCampaign
+    };
+  } catch (error) {
+    console.error("Error rejecting campaign:", error);
+    return {
+      success: false,
+      message: "Failed to reject campaign",
+      error: error instanceof Error ? error.message : "Unknown error"
+    };
+  }
+};
+
+// Juga update fungsi getPendingDirectCampaigns untuk mengambil semua campaign (tidak hanya PENDING)
+export const getAllDirectCampaigns = async () => {
+  const session = await auth()
+  if (!session?.user?.id) {
+    return { success: false, message: 'Unauthorized', campaigns: [] }
+  }
+  
+  const user = await db.user.findUnique({
+    where: { id: session.user.id },
+    select: { role: true }
+  })
+  
+  if (!user || user.role !== 'ADMIN') {
+    return { success: false, message: 'Only admin can access this', campaigns: [] }
+  }
+  
+  try {
+    const campaigns = await db.campaign.findMany({
+      where: {
+        type: 'DIRECT',
+      },
+      include: {
+        brands: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    })
+    
+    return {
+      success: true,
+      campaigns
+    }
+  } catch (error) {
+    console.error('Error fetching campaigns:', error)
+    return {
+      success: false,
+      message: 'Internal error',
+      campaigns: []
+    }
+  }
+}

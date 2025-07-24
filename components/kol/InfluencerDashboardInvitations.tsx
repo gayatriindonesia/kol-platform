@@ -9,11 +9,11 @@ import {
 } from 'lucide-react';
 import { respondToCampaignInvitation } from '@/lib/campaign.actions';
 import { useRouter } from 'next/navigation';
-import { toast } from 'sonner'; // atau notification library lainnya
+import { toast } from 'sonner';
 
 type InvitationStatus = 'PENDING' | 'ACTIVE' | 'REJECTED' | 'COMPLETED' | 'CANCELLED';
 
-interface BrandInfo {
+interface Brand {
   name: string;
   user: { name: string; email: string };
 }
@@ -26,7 +26,7 @@ interface Campaign {
   startDate: string;
   endDate: string;
   type: string;
-  brands?: BrandInfo;
+  brand?: Brand;
 }
 
 interface Invitation {
@@ -42,6 +42,7 @@ interface Invitation {
   invitedAt?: Date;
   respondedAt?: Date;
   campaign?: Campaign;
+  brand?: Brand;
 }
 
 type Props = {
@@ -55,7 +56,9 @@ const InfluencerDashboardInvitations = ({ initialInvitations, influencerId }: Pr
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
-  console.log(initialInvitations);
+  // Debug log untuk memeriksa data
+  console.log('Initial invitations:', initialInvitations);
+  console.log('Current invitations:', invitations);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -108,30 +111,28 @@ const InfluencerDashboardInvitations = ({ initialInvitations, influencerId }: Pr
   };
 
   const handleStatusUpdate = async (
-    invitationId: string, 
+    invitationId: string,
     response: 'ACCEPTED' | 'REJECTED',
     responseMessage?: string
   ) => {
-    // Optimistic update - Update UI immediately
     const newStatus: InvitationStatus = response === 'ACCEPTED' ? 'ACTIVE' : 'REJECTED';
-    const previousInvitations = [...invitations]; // Backup for rollback
-    
-    setInvitations(prev => 
-      prev.map(inv => 
-        inv.id === invitationId 
-          ? { 
-              ...inv, 
-              status: newStatus,
-              responseMessage: responseMessage,
-              respondedAt: new Date()
-            }
+    const previousInvitations = [...invitations];
+
+    setInvitations(prev =>
+      prev.map(inv =>
+        inv.id === invitationId
+          ? {
+            ...inv,
+            status: newStatus,
+            responseMessage: responseMessage,
+            respondedAt: new Date()
+          }
           : inv
       )
     );
 
     startTransition(async () => {
       try {
-        // Call server action
         const result = await respondToCampaignInvitation({
           invitationId,
           influencerId,
@@ -140,18 +141,13 @@ const InfluencerDashboardInvitations = ({ initialInvitations, influencerId }: Pr
         });
 
         if (result.success) {
-          // Show success message
           toast.success(result.message || `Undangan berhasil ${response === 'ACCEPTED' ? 'diterima' : 'ditolak'}`);
-          
-          // Refresh the page to get updated data from server for synchronization
           router.refresh();
         } else {
-          // Rollback optimistic update on server error
           setInvitations(previousInvitations);
           toast.error(result.error || 'Gagal memperbarui status undangan');
         }
       } catch (error) {
-        // Rollback optimistic update on network error
         setInvitations(previousInvitations);
         console.error('Error updating invitation:', error);
         toast.error('Terjadi kesalahan saat memperbarui status undangan');
@@ -159,7 +155,23 @@ const InfluencerDashboardInvitations = ({ initialInvitations, influencerId }: Pr
     });
   };
 
-  // Filter invitations based on active tab
+  // Helper function untuk mendapatkan nama campaign
+  const getCampaignName = (invitation: Invitation): string => {
+    // Coba dari berbagai properti yang mungkin ada
+    if (invitation.campaign?.name) return invitation.campaign.name;
+    if (invitation.campaignId) return `Campaign ID: ${invitation.campaignId}`;
+    return 'Campaign Tidak Diketahui';
+  };
+
+  // Helper function untuk mendapatkan nama brand
+  const getBrandName = (invitation: Invitation): string => {
+    // Coba dari berbagai properti yang mungkin ada
+    if (invitation.campaign?.brand?.name) return invitation.campaign.brand.name;
+    if (invitation.brand?.name) return invitation.brand.name;
+    if (invitation.brandId) return `Brand ID: ${invitation.brandId}`;
+    return 'Brand Tidak Diketahui';
+  };
+
   const filteredInvitations = activeTab === 'ALL'
     ? invitations
     : invitations.filter(inv => inv.status === activeTab);
@@ -196,6 +208,22 @@ const InfluencerDashboardInvitations = ({ initialInvitations, influencerId }: Pr
           <p className="text-gray-600">Kelola undangan kolaborasi dari berbagai brand</p>
         </div>
 
+        {/* Debug Panel - Hapus di production */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <h3 className="font-semibold text-yellow-800 mb-2">Debug Info:</h3>
+            <p className="text-sm text-yellow-700">Total invitations: {invitations.length}</p>
+            {invitations.length > 0 && (
+              <div className="mt-2 text-xs text-yellow-600">
+                <p>Sample invitation data structure:</p>
+                <pre className="mt-1 bg-yellow-100 p-2 rounded overflow-auto max-h-40">
+                  {JSON.stringify(invitations[0], null, 2)}
+                </pre>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Tabs */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
           <div className="border-b border-gray-200">
@@ -205,16 +233,16 @@ const InfluencerDashboardInvitations = ({ initialInvitations, influencerId }: Pr
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
                   className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === tab.key
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                     }`}
                 >
                   {tab.label}
                   {tab.count > 0 && (
                     <span
                       className={`ml-2 py-0.5 px-2 rounded-full text-xs ${activeTab === tab.key
-                          ? 'bg-blue-100 text-blue-600'
-                          : 'bg-gray-100 text-gray-600'
+                        ? 'bg-blue-100 text-blue-600'
+                        : 'bg-gray-100 text-gray-600'
                         }`}
                     >
                       {tab.count}
@@ -249,106 +277,109 @@ const InfluencerDashboardInvitations = ({ initialInvitations, influencerId }: Pr
           )}
 
           {/* Invitation Cards */}
-          {filteredInvitations.map(invitation => (
-            <div
-              key={invitation.id}
-              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
-            >
-              <div className="p-6">
-                {/* Header */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Building2 className="h-5 w-5 text-gray-400" />
-                      <h3 className="text-xl font-semibold text-gray-900">
-                        {invitation.campaign?.id || `ID Request Campaign : ${invitation.campaignId}`}
-                      </h3>
-                      {getStatusBadge(invitation.status)}
-                    </div>
-
-                    {invitation.campaign?.brands && (
-                      <p className="text-gray-600 mb-1">
-                        dari <span className="font-medium">{invitation.campaign.brands.name}</span>
-                      </p>
-                    )}
-
-                    <p className="text-sm text-gray-500">
-                      Diundang pada {formatDate(invitation.invitedAt || invitation.createdAt)}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Campaign Info */}
-                {invitation.campaign && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Calendar className="h-4 w-4" />
-                      <span>
-                        {formatDate(invitation.campaign.startDate)} – {formatDate(invitation.campaign.endDate)}
-                      </span>
-                    </div>
-
-                    {invitation.campaign.budget && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <DollarSign className="h-4 w-4" />
-                        <span>{formatCurrency(invitation.campaign.budget)}</span>
+          {filteredInvitations.map(invitation => {
+            const campaignName = getCampaignName(invitation);
+            const brandName = getBrandName(invitation);
+            
+            return (
+              <div
+                key={invitation.id}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+              >
+                <div className="p-6">
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Building2 className="h-5 w-5 text-gray-400" />
+                        <h3 className="text-xl font-semibold text-gray-900">
+                          {campaignName}
+                        </h3>
+                        {getStatusBadge(invitation.status)}
                       </div>
-                    )}
 
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Clock className="h-4 w-4" />
-                      <span className="capitalize">{invitation.campaign.type?.toLowerCase() || 'Campaign'}</span>
+                      <p className="text-gray-600 mb-1">
+                        dari <span className="font-medium">{brandName}</span>
+                      </p>
+
+                      <p className="text-sm text-gray-500">
+                        Diundang pada {formatDate(invitation.invitedAt || invitation.createdAt)}
+                      </p>
                     </div>
                   </div>
-                )}
 
-                {/* Description */}
-                {invitation.campaign?.description && (
-                  <div className="mb-4">
-                    <h4 className="font-medium text-gray-900 mb-2">Deskripsi Kampanye:</h4>
-                    <p className="text-gray-600 text-sm leading-relaxed">{invitation.campaign.description}</p>
-                  </div>
-                )}
+                  {/* Campaign Info */}
+                  {invitation.campaign && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Calendar className="h-4 w-4" />
+                        <span>
+                          {formatDate(invitation.campaign.startDate)} – {formatDate(invitation.campaign.endDate)}
+                        </span>
+                      </div>
 
-                {/* Brand Message */}
-                {invitation.message && (
-                  <div className="mb-4">
-                    <h4 className="font-medium text-gray-900 mb-2">Pesan dari Brand:</h4>
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                      <p className="text-gray-700 text-sm">&quot;{invitation.message}&quot;</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Response Message (if already responded) */}
-                {invitation.responseMessage && (
-                  <div className="mb-4">
-                    <h4 className="font-medium text-gray-900 mb-2">Respon Anda:</h4>
-                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                      <p className="text-gray-700 text-sm">&quot;{invitation.responseMessage}&quot;</p>
-                      {invitation.respondedAt && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          Direspon pada {formatDate(invitation.respondedAt)}
-                        </p>
+                      {invitation.campaign.budget && (
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <DollarSign className="h-4 w-4" />
+                          <span>{formatCurrency(invitation.campaign.budget)}</span>
+                        </div>
                       )}
-                    </div>
-                  </div>
-                )}
 
-                {/* Action Buttons */}
-                {invitation.status === 'PENDING' && (
-                  <div className="pt-4 border-t border-gray-200">
-                    <InvitationActionButtons
-                      invitationId={invitation.id}
-                      onApprove={(message) => handleStatusUpdate(invitation.id, 'ACCEPTED', message)}
-                      onReject={(message) => handleStatusUpdate(invitation.id, 'REJECTED', message)}
-                      isPending={isPending}
-                    />
-                  </div>
-                )}
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Clock className="h-4 w-4" />
+                        <span className="capitalize">{invitation.campaign.type?.toLowerCase() || 'Campaign'}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Description */}
+                  {invitation.campaign?.description && (
+                    <div className="mb-4">
+                      <h4 className="font-medium text-gray-900 mb-2">Deskripsi Kampanye:</h4>
+                      <p className="text-gray-600 text-sm leading-relaxed">{invitation.campaign.description}</p>
+                    </div>
+                  )}
+
+                  {/* Brand Message */}
+                  {invitation.message && (
+                    <div className="mb-4">
+                      <h4 className="font-medium text-gray-900 mb-2">Pesan dari Brand:</h4>
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <p className="text-gray-700 text-sm">&quot;{invitation.message}&quot;</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Response Message */}
+                  {invitation.responseMessage && (
+                    <div className="mb-4">
+                      <h4 className="font-medium text-gray-900 mb-2">Respon Anda:</h4>
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                        <p className="text-gray-700 text-sm">&quot;{invitation.responseMessage}&quot;</p>
+                        {invitation.respondedAt && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            Direspon pada {formatDate(invitation.respondedAt)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  {invitation.status === 'PENDING' && (
+                    <div className="pt-4 border-t border-gray-200">
+                      <InvitationActionButtons
+                        invitationId={invitation.id}
+                        onApprove={(message) => handleStatusUpdate(invitation.id, 'ACCEPTED', message)}
+                        onReject={(message) => handleStatusUpdate(invitation.id, 'REJECTED', message)}
+                        isPending={isPending}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
@@ -363,10 +394,10 @@ interface InvitationActionButtonsProps {
   isPending: boolean;
 }
 
-const InvitationActionButtons = ({ 
-  onApprove, 
-  onReject, 
-  isPending 
+const InvitationActionButtons = ({
+  onApprove,
+  onReject,
+  isPending
 }: InvitationActionButtonsProps) => {
   const [showResponseModal, setShowResponseModal] = useState<'accept' | 'reject' | null>(null);
   const [responseMessage, setResponseMessage] = useState('');
@@ -408,14 +439,14 @@ const InvitationActionButtons = ({
               {showResponseModal === 'accept' ? 'Terima Undangan' : 'Tolak Undangan'}
             </h3>
             <p className="text-gray-600 mb-4">
-              {showResponseModal === 'accept' 
+              {showResponseModal === 'accept'
                 ? 'Tambahkan pesan untuk brand (opsional):'
                 : 'Berikan alasan penolakan (opsional):'}
             </p>
             <textarea
               value={responseMessage}
               onChange={(e) => setResponseMessage(e.target.value)}
-              placeholder={showResponseModal === 'accept' 
+              placeholder={showResponseModal === 'accept'
                 ? 'Terima kasih atas undangannya...'
                 : 'Maaf, saat ini saya tidak bisa...'
               }
@@ -430,11 +461,10 @@ const InvitationActionButtons = ({
               </button>
               <button
                 onClick={() => handleSubmitResponse(showResponseModal)}
-                className={`flex-1 px-4 py-2 text-white rounded-lg ${
-                  showResponseModal === 'accept' 
-                    ? 'bg-green-600 hover:bg-green-700' 
+                className={`flex-1 px-4 py-2 text-white rounded-lg ${showResponseModal === 'accept'
+                    ? 'bg-green-600 hover:bg-green-700'
                     : 'bg-red-600 hover:bg-red-700'
-                }`}
+                  }`}
               >
                 {showResponseModal === 'accept' ? 'Terima' : 'Tolak'}
               </button>

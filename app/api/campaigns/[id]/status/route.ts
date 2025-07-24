@@ -35,7 +35,10 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
 
         return NextResponse.json({
             success: true,
-            campaign: campaignResult.campaign
+            campaign: campaignResult.campaign,
+            status: campaignResult.campaign.status,
+            updated: campaignResult.campaign.updatedAt,
+            endDate: campaignResult.campaign.endDate
         });
 
     } catch (error) {

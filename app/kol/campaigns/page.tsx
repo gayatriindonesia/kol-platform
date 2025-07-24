@@ -46,7 +46,7 @@ const CampaignPage = async () => {
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
     invitedAt: item.invitedAt,
-    respondedAt: item.respondedAt ?? undefined, // Convert null to undefined
+    respondedAt: item.respondedAt ?? undefined,
   }));
   
   return (

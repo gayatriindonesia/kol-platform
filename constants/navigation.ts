@@ -39,8 +39,19 @@ export const adminNavigationItems: NavigationItem[] = [
   },
   {
     name: 'Campaign',
-    path: '/admin/campaigns',
     icon: MdCampaign,
+    children: [
+      {
+        name: 'All Campaigns',
+        path: '/admin/campaigns',
+        icon: MdList,
+      },
+      {
+        name: 'Request Campaigns',
+        path: '/admin/campaigns/requests',
+        icon: MdAdd,
+      },
+    ],
   },
   {
     name: 'Influencers',

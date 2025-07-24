@@ -81,7 +81,7 @@ const CampaignDetailPage = async ({ params }: CampaignDetailPageProps) => {
         }
 
         let campaign = campaignResponse.campaign;
-        console.log('Campaign data fetched:', campaign);
+        // console.log('Campaign data fetched:', campaign);
 
         // 2. Cek apakah campaign sudah berakhir dan perlu diupdate
         if (campaign.endDate && campaign.status === 'ACTIVE') {
