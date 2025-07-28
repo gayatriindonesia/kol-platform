@@ -42,14 +42,14 @@ export const adminNavigationItems: NavigationItem[] = [
     icon: MdCampaign,
     children: [
       {
-        name: 'All Campaigns',
+        name: 'All Campaign',
         path: '/admin/campaigns',
         icon: MdList,
       },
       {
-        name: 'Request Campaigns',
+        name: 'Request Campaign',
         path: '/admin/campaigns/requests',
-        icon: MdAdd,
+        icon: MdCampaign,
       },
     ],
   },

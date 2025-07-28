@@ -208,7 +208,7 @@ const SelfServiceSetup = () => {
               <input
                 type="text"
                 placeholder="Cari berdasarkan nama..."
-                className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                className="w-full text-sm px-3 py-1.5 pl-9 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />

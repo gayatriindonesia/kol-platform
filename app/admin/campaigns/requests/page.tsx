@@ -210,7 +210,15 @@ export default function RequestCampaign() {
               <div className="text-sm text-gray-700 space-y-2 mb-4">
                 <p className="flex items-center gap-2">
                   <User className="w-4 h-4" />
-                  {campaign.brands.user.name} ({campaign.brands.name})
+                  User : {campaign.brands.user.name}
+                </p>
+                <p className="flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Nama Brand : {campaign.brands.name}
+                </p>
+                <p className="flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Tipe Campaign: {campaign.type}
                 </p>
                 <p className="flex items-center gap-2">
                   <DollarSign className="w-4 h-4" />
@@ -234,31 +242,6 @@ export default function RequestCampaign() {
                   <Eye className="w-4 h-4" />
                   Review
                 </button>
-
-                {campaign.status === 'PENDING' && (
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleApprove(campaign.id)}
-                      disabled={loadingId === campaign.id}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:bg-green-400 rounded"
-                    >
-                      {loadingId === campaign.id ? (
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <CheckCircle className="w-4 h-4" />
-                      )}
-                      Approve
-                    </button>
-                    <button
-                      onClick={() => handleReject(campaign.id)}
-                      disabled={loadingId === campaign.id}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:bg-red-400 rounded"
-                    >
-                      <XCircle className="w-4 h-4" />
-                      Reject
-                    </button>
-                  </div>
-                )}
               </div>
             </div>
           ))}

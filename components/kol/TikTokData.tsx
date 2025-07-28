@@ -22,20 +22,16 @@ export default function TikTokData({ connections: initialConnections }: TikTokDa
   const [isDisconnecting, setIsDisconnecting] = useState<Record<string, boolean>>({});
   const [lastAutoRefresh, setLastAutoRefresh] = useState<Date | null>(null);
 
-  // Auto-refresh setiap 5 menit
   useEffect(() => {
     const autoRefreshInterval = setInterval(async () => {
       if (connections.length > 0) {
         console.log('Auto-refreshing TikTok data...');
         await handleAutoRefresh();
       }
-    }, 5 * 60 * 1000); // 5 menit
-
-    // Cleanup interval on component unmount
+    }, 5 * 60 * 1000);
     return () => clearInterval(autoRefreshInterval);
   }, [connections.length]);
 
-  // Initial auto-refresh saat component mount
   useEffect(() => {
     if (connections.length > 0) {
       const checkAndRefresh = async () => {
@@ -44,14 +40,13 @@ export default function TikTokData({ connections: initialConnections }: TikTokDa
           if (!conn.lastSynced) return true;
           const lastSynced = new Date(conn.lastSynced);
           const diffMinutes = (now.getTime() - lastSynced.getTime()) / (1000 * 60);
-          return diffMinutes > 60; // Refresh jika lebih dari 1 jam
+          return diffMinutes > 60;
         });
 
         if (shouldRefresh) {
           await handleAutoRefresh();
         }
       };
-
       checkAndRefresh();
     }
   }, []);
@@ -60,12 +55,10 @@ export default function TikTokData({ connections: initialConnections }: TikTokDa
     try {
       setLastAutoRefresh(new Date());
 
-      // Refresh semua koneksi secara parallel
       const refreshPromises = connections.map(async (connection) => {
         try {
           const result = await refreshTikTokData(connection.id);
           if (result.success) {
-            // Fetch updated data
             const response = await fetch('/api/tiktok-connections');
             if (response.ok) {
               const updatedConnections = await response.json();
@@ -81,7 +74,6 @@ export default function TikTokData({ connections: initialConnections }: TikTokDa
 
       const updatedConnections = await Promise.all(refreshPromises);
       setConnections(updatedConnections.filter(Boolean));
-
       console.log('Auto-refresh completed');
     } catch (error) {
       console.error('Auto-refresh failed:', error);
@@ -94,8 +86,6 @@ export default function TikTokData({ connections: initialConnections }: TikTokDa
       const result = await refreshTikTokData(connectionId);
       if (result.success) {
         toast.success("TikTok data refreshed successfully");
-
-        // Update specific connection in state
         const response = await fetch('/api/tiktok-connections');
         if (response.ok) {
           const updatedConnections = await response.json();
@@ -113,16 +103,13 @@ export default function TikTokData({ connections: initialConnections }: TikTokDa
   };
 
   const handleDisconnect = async (connectionId: string) => {
-    if (!confirm("Are you sure you want to disconnect this TikTok account?")) {
-      return;
-    }
+    if (!confirm("Are you sure you want to disconnect this TikTok account?")) return;
 
     setIsDisconnecting(prev => ({ ...prev, [connectionId]: true }));
     try {
       const result = await disconnectTikTok(connectionId);
       if (result.success) {
         toast.success("TikTok account disconnected");
-        // Remove connection from state
         setConnections(prev => prev.filter(conn => conn.id !== connectionId));
       } else {
         toast.error(result.error || "Failed to disconnect account");
@@ -147,7 +134,6 @@ export default function TikTokData({ connections: initialConnections }: TikTokDa
 
   return (
     <div className="space-y-6">
-      {/* Status indicator */}
       <div className="flex items-center justify-between text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg">
         <span>Auto-refresh: Active (every 5 minutes)</span>
         {lastAutoRefresh && (
@@ -162,9 +148,17 @@ export default function TikTokData({ connections: initialConnections }: TikTokDa
           <div key={connection.id} className="border rounded-lg p-4">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="h-12 w-12 bg-black rounded-full flex items-center justify-center">
-                  <FaTiktok className="h-6 w-6 text-white" />
-                </div>
+                {platformData?.avatarUrl ? (
+                  <img
+                    src={platformData.avatarUrl}
+                    alt="Avatar"
+                    className="h-12 w-12 rounded-full object-cover border"
+                  />
+                ) : (
+                  <div className="h-12 w-12 bg-black rounded-full flex items-center justify-center">
+                    <FaTiktok className="h-6 w-6 text-white" />
+                  </div>
+                )}
                 <div>
                   <h3 className="text-lg font-medium">@{connection.username}</h3>
                   <p className="text-sm text-gray-500">
@@ -219,34 +213,37 @@ export default function TikTokData({ connections: initialConnections }: TikTokDa
               </div>
             </div>
 
-            {/* Engagement metrics 
-            {(connection.engagementRate || connection.likesCount) && (
-              <div className="grid grid-cols-2 gap-4 mt-4">
-                <div className="border rounded-lg p-3 text-center">
-                  <p className="text-sm text-gray-500">Engagement Rate</p>
-                  <p className="text-xl font-semibold">
-                    {connection.engagementRate ? `${connection.engagementRate}%` : 'N/A'}
-                  </p>
+            {platformData && (
+              <div className="mt-6 border-t pt-4 space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {platformData.likesCount !== undefined && (
+                    <div className="border rounded-lg p-3 text-center">
+                      <p className="text-sm text-gray-500">Total Likes</p>
+                      <p className="text-xl font-semibold">
+                        {platformData.likesCount.toLocaleString()}
+                      </p>
+                    </div>
+                  )}
+                  {platformData.videoCount !== undefined && (
+                    <div className="border rounded-lg p-3 text-center">
+                      <p className="text-sm text-gray-500">Video Count</p>
+                      <p className="text-xl font-semibold">
+                        {platformData.videoCount.toLocaleString()}
+                      </p>
+                    </div>
+                  )}
                 </div>
-                <div className="border rounded-lg p-3 text-center">
-                  <p className="text-sm text-gray-500">Total Likes</p>
-                  <p className="text-xl font-semibold">
-                    {connection.likesCount?.toLocaleString() || 'N/A'}
-                  </p>
-                </div>
-              </div>
-            )}
-              */}
 
-            {/**
-            
-            {platformData?.bio && (
-              <div className="mt-4 border-t pt-4">
-                <h4 className="text-sm font-medium mb-1">Bio:</h4>
-                <p className="text-sm text-gray-600">{platformData.bio}</p>
+                {connection.engagementRate !== null && (
+                  <div className="border rounded-lg p-3 text-center">
+                    <p className="text-sm text-gray-500">Engagement Rate</p>
+                    <p className="text-xl font-semibold">
+                      {connection.engagementRate?.toFixed(2)}%
+                    </p>
+                  </div>
+                )}
               </div>
             )}
-               */}
           </div>
         );
       })}

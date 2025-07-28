@@ -1,38 +1,61 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Instagram, RefreshCw, Unlink } from 'lucide-react';
+import { Instagram, RefreshCw, Unlink, AlertCircle, CheckCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   disconnectInstagram, 
   syncInstagramData 
 } from '@/lib/instagram.actions';
-// import { useToast } from '@/components/ui/use-toast';
+import { advancedInstagramSync } from '@/lib/instagram-advanced.actions';
+import InstagramAdvancedPanel from './InstagramAdvancedPanel';
 
 interface InstagramConnectProps {
   isConnected?: boolean;
   username?: string;
   lastSynced?: Date | null;
+  connection?: any; // Full connection data for advanced features
+  showAdvanced?: boolean;
 }
 
 export default function InstagramConnectButton({
   isConnected = false,
   username,
-  lastSynced
+  lastSynced,
+  connection,
+  showAdvanced = false
 }: InstagramConnectProps) {
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
-//  const { toast } = useToast();
+  const [advancedSyncing, setAdvancedSyncing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [showAdvancedPanel, setShowAdvancedPanel] = useState(showAdvanced);
 
-  // Handler untuk menautkan Instagram
+  // Clear messages after 5 seconds
+  useEffect(() => {
+    if (error || success) {
+      const timer = setTimeout(() => {
+        setError(null);
+        setSuccess(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error, success]);
+
   // Handler untuk menautkan Instagram
   const handleConnectInstagram = async () => {
     try {
       setLoading(true);
-      // Alihkan ke server route yang menangani redirect ke Instagram
+      setError(null);
+      setSuccess(null);
+      
+      // Redirect to server route that handles Instagram OAuth
       window.location.href = '/api/instagram/authorize';
     } catch (error) {
       console.error("Error connecting Instagram:", error);
+      setError(error instanceof Error ? error.message : "Failed to connect Instagram");
       setLoading(false);
     }
   };
@@ -45,28 +68,20 @@ export default function InstagramConnectButton({
 
     try {
       setLoading(true);
+      setError(null);
+      setSuccess(null);
+      
       const result = await disconnectInstagram();
       
       if (result.success) {
-        // toast({
-        //  title: "Success",
-        //  description: "Instagram account disconnected successfully",
-        // });
-        window.location.reload();
+        setSuccess("Instagram account disconnected successfully");
+        setTimeout(() => window.location.reload(), 1500);
       } else {
-        // toast({
-        //  title: "Disconnection Failed",
-        //  description: result.message || "Failed to disconnect Instagram account",
-        //  variant: "destructive"
-        // });
+        setError(result.message || "Failed to disconnect Instagram account");
       }
     } catch (error) {
       console.error("Error disconnecting Instagram:", error);
-      //toast({
-      //  title: "Disconnection Failed",
-      //  description: error instanceof Error ? error.message : "An error occurred",
-      //  variant: "destructive"
-      // });
+      setError(error instanceof Error ? error.message : "Failed to disconnect Instagram");
     } finally {
       setLoading(false);
     }
@@ -76,30 +91,45 @@ export default function InstagramConnectButton({
   const handleSyncInstagram = async () => {
     try {
       setSyncing(true);
+      setError(null);
+      setSuccess(null);
+      
       const result = await syncInstagramData();
       
       if (result.success) {
-        // toast({
-        //  title: "Success",
-        //  description: "Instagram data synced successfully",
-        // });
-        window.location.reload();
+        setSuccess("Instagram data synced successfully");
+        setTimeout(() => window.location.reload(), 1500);
       } else {
-        // toast({
-        //  title: "Sync Failed",
-        //  description: result.message || "Failed to sync Instagram data",
-        //  variant: "destructive"
-        // });
+        setError(result.message || "Failed to sync Instagram data");
       }
     } catch (error) {
       console.error("Error syncing Instagram data:", error);
-      // toast({
-      //  title: "Sync Failed",
-      //  description: error instanceof Error ? error.message : "An error occurred",
-      //  variant: "destructive"
-      // });
+      setError(error instanceof Error ? error.message : "Failed to sync Instagram data");
     } finally {
       setSyncing(false);
+    }
+  };
+
+  // Handler untuk advanced sync
+  const handleAdvancedSync = async () => {
+    try {
+      setAdvancedSyncing(true);
+      setError(null);
+      setSuccess(null);
+      
+      const result = await advancedInstagramSync();
+      
+      if (result.success) {
+        setSuccess("Advanced Instagram data synced successfully");
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        setError(result.message || "Failed to sync advanced Instagram data");
+      }
+    } catch (error) {
+      console.error("Error syncing advanced Instagram data:", error);
+      setError(error instanceof Error ? error.message : "Failed to sync advanced Instagram data");
+    } finally {
+      setAdvancedSyncing(false);
     }
   };
 
@@ -114,6 +144,22 @@ export default function InstagramConnectButton({
 
   return (
     <div className="flex flex-col space-y-4 p-4 border rounded-lg bg-white shadow-sm">
+      {/* Error Message */}
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* Success Message */}
+      {success && (
+        <Alert className="border-green-200 bg-green-50">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-700">{success}</AlertDescription>
+        </Alert>
+      )}
+
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Instagram className="w-5 h-5 text-pink-500" />
@@ -152,7 +198,7 @@ export default function InstagramConnectButton({
         </div>
       )}
 
-      <div className="flex space-x-2 mt-2">
+      <div className="flex flex-wrap gap-2 mt-2">
         {isConnected ? (
           <>
             <Button
@@ -173,8 +219,29 @@ export default function InstagramConnectButton({
               className="flex items-center space-x-1"
             >
               <RefreshCw className={`w-4 h-4 mr-1 ${syncing ? 'animate-spin' : ''}`} />
-              {syncing ? 'Syncing...' : 'Sync Data'}
+              {syncing ? 'Syncing...' : 'Basic Sync'}
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleAdvancedSync}
+              disabled={advancedSyncing}
+              className="flex items-center space-x-1"
+            >
+              <RefreshCw className={`w-4 h-4 mr-1 ${advancedSyncing ? 'animate-spin' : ''}`} />
+              {advancedSyncing ? 'Advanced Syncing...' : 'Advanced Sync'}
+            </Button>
+            {connection && (
+              <Button
+                variant={showAdvancedPanel ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowAdvancedPanel(!showAdvancedPanel)}
+                className="flex items-center space-x-1"
+              >
+                <Instagram className="w-4 h-4 mr-1" />
+                {showAdvancedPanel ? 'Hide Analytics' : 'Show Analytics'}
+              </Button>
+            )}
           </>
         ) : (
           <Button
@@ -187,6 +254,16 @@ export default function InstagramConnectButton({
           </Button>
         )}
       </div>
+
+      {/* Advanced Analytics Panel */}
+      {isConnected && connection && showAdvancedPanel && (
+        <div className="mt-6">
+          <InstagramAdvancedPanel 
+            connection={connection} 
+            onUpdate={() => window.location.reload()}
+          />
+        </div>
+      )}
     </div>
   );
 }

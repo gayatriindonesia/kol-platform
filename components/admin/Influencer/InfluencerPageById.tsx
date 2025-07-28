@@ -304,82 +304,97 @@ export default function InfluencerDetailClient({ id }: Props) {
 
         {/* Header Profile */}
         <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm mb-8 overflow-hidden">
-          <div 
-            className="h-48 bg-gradient-to-r from-pink-400 via-purple-500 to-indigo-600 relative"
-            style={{ 
-              backgroundImage: `url(${influencer.image})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center'
-            }}
-          >
-            <div className="absolute inset-0 bg-black/20"></div>
-          </div>
+  {/* Hero Background */}
+  <div 
+    className="h-48 bg-gradient-to-r from-pink-400 via-purple-500 to-indigo-600 relative"
+    style={{ 
+      backgroundImage: `url(${influencer.image})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center'
+    }}
+  >
+    <div className="absolute inset-0 bg-black/20" />
+  </div>
+
+  <CardContent className="relative">
+    <div className="flex flex-col lg:flex-row gap-6 -mt-16 relative z-10">
+      
+      {/* Avatar */}
+      <div className="flex-shrink-0">
+        <img
+          src={influencer.image || influencerData.avatar}
+          alt={influencer.name || influencerData.name}
+          className="w-32 h-32 rounded-full border-4 border-white shadow-xl object-cover"
+        />
+      </div>
+
+      {/* Detail */}
+      <div className="flex-1 pt-16 lg:pt-4">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           
-          <CardContent className="relative">
-            <div className="flex flex-col lg:flex-row gap-6 -mt-16 relative z-10">
-              <div className="flex-shrink-0">
-                <img
-                  src={influencer.image || influencerData.avatar}
-                  alt={influencer.name || influencerData.name}
-                  className="w-32 h-32 rounded-full border-4 border-white shadow-xl object-cover"
-                />
+          {/* Left Info */}
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <span className="bg-white text-gray-900 text-2xl font-semibold px-4 py-1 rounded shadow-sm">
+                {influencer.name}
+              </span>
+
+              {influencerData.isVerified && (
+                <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                  <Award className="w-3 h-3 mr-1" />
+                  Verified
+                </Badge>
+              )}
+            </div>
+
+            <div className="flex items-center gap-6 text-sm text-gray-600 mb-4">
+              <div className="flex items-center gap-1">
+                <MapPin className="w-4 h-4" />
+                <span>{influencerData.location}</span>
               </div>
-              
-              <div className="flex-1 pt-16 lg:pt-4">
-                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-                  <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <h1 className="text-3xl font-bold text-gray-900">{influencer.name}</h1>
-                      {influencerData.isVerified && (
-                        <Badge className="bg-blue-100 text-blue-800 border-blue-200">
-                          <Award className="w-3 h-3 mr-1" />
-                          Verified
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-lg text-gray-600 mb-2">{influencer.name}</p>
-                    <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
-                      <div className="flex items-center gap-1">
-                        <MapPin className="w-4 h-4" />
-                        <span>{influencerData.location}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        <span>Bergabung {formatDate(influencerData.joinDate)}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Star className="w-4 h-4 text-yellow-500" />
-                        <span>{influencerData.rating}/5 ({influencerData.totalReviews} reviews)</span>
-                      </div>
-                    </div>
-                    <Badge className={`${getTierColor(influencerData.tier)} mb-4`}>
-                      <TrendingUp className="w-3 h-3 mr-1" />
-                      {influencerData.tier}
-                    </Badge>
-                    <p className="text-gray-700 max-w-2xl">{influencerData.bio}</p>
-                  </div>
-                  
-                  <div className="flex gap-3">
-                    <Button 
-                      onClick={() => setIsFollowing(!isFollowing)}
-                      className={isFollowing ? "bg-gray-200 text-gray-800 hover:bg-gray-300" : "bg-blue-600 hover:bg-blue-700"}
-                    >
-                      {isFollowing ? 'Following' : 'Follow'}
-                    </Button>
-                    <Button variant="outline">
-                      <Mail className="w-4 h-4 mr-2" />
-                      Contact
-                    </Button>
-                    <Button variant="outline">
-                      <Share2 className="w-4 h-4 mr-2" />
-                      Share
-                    </Button>
-                  </div>
-                </div>
+              <div className="flex items-center gap-1">
+                <Calendar className="w-4 h-4" />
+                <span>Bergabung {formatDate(influencerData.joinDate)}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Star className="w-4 h-4 text-yellow-500" />
+                <span>{influencerData.rating}/5 ({influencerData.totalReviews} reviews)</span>
               </div>
             </div>
-          </CardContent>
-        </Card>
+
+            <Badge className={`${getTierColor(influencerData.tier)} mb-4`}>
+              <TrendingUp className="w-3 h-3 mr-1" />
+              {influencerData.tier}
+            </Badge>
+
+            <p className="text-gray-700 max-w-2xl">{influencerData.bio}</p>
+          </div>
+
+          {/* Right Actions */}
+          <div className="flex gap-3">
+            <Button 
+              onClick={() => setIsFollowing(!isFollowing)}
+              className={isFollowing ? "bg-gray-200 text-gray-800 hover:bg-gray-300" : "bg-blue-600 hover:bg-blue-700"}
+            >
+              {isFollowing ? 'Following' : 'Follow'}
+            </Button>
+
+            <Button variant="outline">
+              <Mail className="w-4 h-4 mr-2" />
+              Contact
+            </Button>
+
+            <Button variant="outline">
+              <Share2 className="w-4 h-4 mr-2" />
+              Share
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

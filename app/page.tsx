@@ -1,124 +1,132 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Users, TrendingUp, Star, Mail, Phone, MapPin, Video, Play, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Users, TrendingUp, Star, Mail, Phone, MapPin, Video, Play, X, Shield, FileText, Menu, Loader2 } from 'lucide-react';
 import { FaFacebook, FaInstagram, FaLinkedin, FaTiktok, FaTwitter, FaYoutube } from 'react-icons/fa';
-import { useSession } from "next-auth/react";
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const InfluencerAgency = () => {
-  const { data: session } = useSession();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
-  const videoRef = useRef<HTMLIFrameElement>(null);
+  const [activeSection, setActiveSection] = useState('home');
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
+  // Enhanced carousel slides with better content
   const carouselSlides = [
     {
-      title: "",
-      subtitle: "",
-      image: "/images/carousel/carousel-1.png"
+      title: "Transform Your Brand's Digital Presence",
+      subtitle: "Connect with millions through authentic influencer partnerships",
+      image: "https://images.unsplash.com/photo-1557804506-669a67965ba0?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80",
+      cta: "Start Your Campaign"
     },
     {
-      title: "Maximize Your Brand's Digital Impact",
-      subtitle: "Strategic partnerships that drive engagement and growth",
-      image: "/images/carousel/carousel-2.jpg"
+      title: "Data-Driven Influencer Marketing",
+      subtitle: "Maximize ROI with our advanced analytics and targeting",
+      image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80",
+      cta: "View Analytics"
     },
     {
-      title: "Your Success is Our Mission",
-      subtitle: "Data-driven campaigns with measurable results",
-      // background: "linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #60a5fa 100%)"
+      title: "Global Network of Creators",
+      subtitle: "Access 50,000+ verified influencers across all platforms",
+      image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80",
+      cta: "Browse Creators"
     }
   ];
 
   const teamMembers = [
     {
-      name: "",
+      name: "Sarah Chen",
       role: "CEO & Founder",
-      image: "/images/teams/1_big.jpg"
+      image: "https://images.unsplash.com/photo-1494790108755-2616c22082ad?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
+      bio: "10+ years in digital marketing"
     },
     {
-      name: "",
-      role: "Business Director",
-      image: "/images/teams/2_big.jpg"
+      name: "Marcus Johnson",
+      role: "Creative Director",
+      image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
+      bio: "Award-winning creative strategist"
     },
     {
-      name: "",
-      role: "Account Executive",
-      image: "/images/teams/5_big.jpg"
+      name: "Elena Rodriguez",
+      role: "Head of Partnerships",
+      image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
+      bio: "Expert in influencer relations"
     },
     {
-      name: "",
-      role: "Senior Account Manager",
-      image: "/images/teams/4_big.jpg"
+      name: "David Kim",
+      role: "Data Analytics Lead",
+      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
+      bio: "AI & ML specialist"
     }
   ];
 
   const platforms = [
-    { name: "Instagram", icon: FaInstagram, users: "2B+", color: "#E4405F" },
-    { name: "YouTube", icon: FaYoutube, users: "2.7B+", color: "#FF0000" },
-    { name: "TikTok", icon: FaTiktok, users: "1B+", color: "#000000" },
-    { name: "Twitter", icon: FaTwitter, users: "450M+", color: "#1DA1F2" },
-    { name: "Facebook", icon: FaFacebook, users: "2.9B+", color: "#4267B2" },
-    { name: "LinkedIn", icon: FaLinkedin, users: "900M+", color: "#0077B5" }
+    { name: "Instagram", icon: FaInstagram, users: "2B+", color: "#E4405F", growth: "+15%" },
+    { name: "YouTube", icon: FaYoutube, users: "2.7B+", color: "#FF0000", growth: "+12%" },
+    { name: "TikTok", icon: FaTiktok, users: "1B+", color: "#000000", growth: "+28%" },
+    { name: "Twitter", icon: FaTwitter, users: "450M+", color: "#1DA1F2", growth: "+8%" },
+    { name: "Facebook", icon: FaFacebook, users: "2.9B+", color: "#4267B2", growth: "+5%" },
+    { name: "LinkedIn", icon: FaLinkedin, users: "900M+", color: "#0077B5", growth: "+18%" }
   ];
 
-  // Video gallery data
   const videoGallery = [
     {
       id: "dQw4w9WgXcQ",
-      title: "Campaign Highlights 2024",
-      description: "Top performing campaigns from our influencer network",
-      thumbnail: "/images/gallery/campaign-highlights.jpg"
+      title: "Campaign Success Story",
+      description: "How we achieved 300% ROI for a beauty brand",
+      thumbnail: "https://images.unsplash.com/photo-1611224923853-80b023f02d71?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80"
     },
     {
       id: "tgbNymZ7vqY",
-      title: "Behind The Scenes",
-      description: "A day in the life of our top influencers",
-      thumbnail: "/images/gallery/behind-scenes.jpg"
+      title: "Creator Collaboration",
+      description: "Behind the scenes of viral content creation",
+      thumbnail: "https://images.unsplash.com/photo-1551650975-87deedd944c3?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80"
     },
     {
       id: "pEFH_kCijmg",
-      title: "Influencer Collaboration",
-      description: "How we create authentic brand partnerships",
-      thumbnail: "/images/gallery/influencer-collab.jpg"
-    },
-    {
-      id: "q6EoRBvdVPQ",
-      title: "Brand Success Stories",
-      description: "Case studies from our satisfied clients",
-      thumbnail: "/images/gallery/success-stories.jpg"
-    },
-    {
-      id: "9bZkp7q19f0",
-      title: "Content Creation Process",
-      description: "How our influencers create engaging content",
-      thumbnail: "/images/gallery/content-creation.jpg"
-    },
-    {
-      id: "CevxZvSJLk8",
-      title: "Industry Insights",
-      description: "Trends and predictions for influencer marketing",
-      thumbnail: "/images/gallery/industry-insights.jpg"
+      title: "Brand Partnership",
+      description: "Long-term influencer relationship building",
+      thumbnail: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80"
     }
+  ];
+
+  // Stats data
+  const stats = [
+    { number: "50K+", label: "Verified Creators", icon: Users },
+    { number: "500M+", label: "Total Reach", icon: TrendingUp },
+    { number: "98%", label: "Client Satisfaction", icon: Star },
+    { number: "300%", label: "Average ROI", icon: TrendingUp }
   ];
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % carouselSlides.length);
-    }, 5000);
+    }, 6000);
     return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {
-    // Close video modal when pressing escape key
-    const handleEsc = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setSelectedVideo(null);
-      }
+    const handleScroll = () => {
+      const sections = ['home', 'services', 'team', 'platforms', 'gallery', 'contact'];
+      const scrollPosition = window.scrollY + 100;
+
+      sections.forEach(section => {
+        const element = document.getElementById(section);
+        if (element) {
+          const { offsetTop, offsetHeight } = element;
+          if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
+            setActiveSection(section);
+          }
+        }
+      });
     };
 
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const nextSlide = () => {
@@ -136,339 +144,355 @@ const InfluencerAgency = () => {
   const closeVideo = () => {
     setSelectedVideo(null);
     if (videoRef.current) {
-      // Stop video playback by removing the src
       videoRef.current.src = '';
     }
   };
 
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+    setIsMenuOpen(false);
+  };
+
+  const handleClick = () => {
+    setLoading(true)
+    // Simulasi delay (misal fetch atau animasi)
+    setTimeout(() => {
+      router.push('/signin')
+    }, 1000) // ganti sesuai kebutuhan
+  }
+
+
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen bg-slate-950 text-white overflow-x-hidden">
       {/* Video Modal */}
       {selectedVideo && (
-        <div className="fixed inset-0 bg-black/90 z-[100] flex items-center justify-center p-4">
-          <div className="relative w-full max-w-4xl">
+        <div className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="relative w-full max-w-5xl">
             <button
               onClick={closeVideo}
-              className="absolute -top-12 right-0 p-2 rounded-full hover:bg-slate-700 transition-colors z-10"
+              className="absolute -top-12 right-0 p-3 rounded-full bg-slate-800/80 hover:bg-slate-700 transition-colors z-10"
             >
               <X className="w-6 h-6 text-white" />
             </button>
-            <div className="aspect-w-16 aspect-h-9">
-              <iframe
+            <div className="aspect-video rounded-2xl overflow-hidden shadow-2xl">
+              <video
                 ref={videoRef}
                 src={`https://www.youtube.com/embed/${selectedVideo}?autoplay=1`}
                 title="YouTube video player"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="w-full h-full rounded-xl"
-              ></iframe>
+                className="w-full h-full"
+              />
             </div>
           </div>
         </div>
       )}
 
-      {/* Header */}
-      <header className="fixed top-0 w-full bg-slate-900/95 backdrop-blur-sm border-b border-blue-500/20 z-50">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
-            GayatriDigital
+      {/* Enhanced Header */}
+      <header className="fixed top-0 w-full bg-slate-950/90 backdrop-blur-xl border-b border-slate-800/50 z-50 transition-all duration-300">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex justify-between items-center">
+            {/* Logo */}
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                <span className="text-white font-bold text-lg">G</span>
+              </div>
+              <div className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-blue-600 bg-clip-text text-transparent">
+                GayatriDigital
+              </div>
+            </div>
+
+            {/* Desktop Navigation */}
+            <nav className="hidden lg:flex items-center space-x-8">
+              {['Home', 'Services', 'Team', 'Platforms', 'Gallery', 'Contact'].map((item) => (
+                <button
+                  key={item}
+                  onClick={() => scrollToSection(item.toLowerCase())}
+                  className={`relative px-3 py-2 text-sm font-medium transition-all duration-300 hover:text-blue-400 ${activeSection === item.toLowerCase()
+                    ? 'text-blue-400'
+                    : 'text-slate-300'
+                    }`}
+                >
+                  {item}
+                  {activeSection === item.toLowerCase() && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full" />
+                  )}
+                </button>
+              ))}
+
+              {/* Privacy & Terms */}
+              <div className="flex items-center space-x-4 ml-8 pl-8 border-l border-slate-700">
+                <Link
+                  href="/privacy"
+                  className="flex items-center space-x-2 text-slate-400 hover:text-blue-400 transition-colors"
+                >
+                  <Shield className="w-4 h-4" />
+                  <span className="text-sm">Privacy</span>
+                </Link>
+
+                <Link
+                  href="/terms"
+                  className="flex items-center space-x-2 text-slate-400 hover:text-blue-400 transition-colors"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span className="text-sm">Terms</span>
+                </Link>
+              </div>
+              {/** Navbar Get Started or signin */}
+              <div className="flex items-center space-x-4 ml-4">
+                <button
+                  onClick={handleClick}
+                  disabled={loading}
+                  className="flex items-center justify-center bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:from-blue-600 hover:to-purple-700 transition-all transform hover:scale-105 shadow-lg hover:shadow-blue-500/25 disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="animate-spin mr-2 h-5 w-5" />
+                      Loading...
+                    </>
+                  ) : (
+                    'Get Started'
+                  )}
+                </button>
+              </div>
+            </nav>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="lg:hidden p-2 rounded-xl hover:bg-slate-800 transition-colors"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
           </div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex space-x-8">
-            <a href="#home" className="hover:text-blue-400 transition-colors">Home</a>
-            <a href="#services" className="hover:text-blue-400 transition-colors">Services</a>
-            <a href="#team" className="hover:text-blue-400 transition-colors">Team</a>
-            <a href="#platforms" className="hover:text-blue-400 transition-colors">Platforms</a>
-            <a href="#gallery" className="hover:text-blue-400 transition-colors">Gallery</a>
-            <a href="#contact" className="hover:text-blue-400 transition-colors">Contact</a>
-            {session?.user ? (
-              <a
-                href={
-                  session.user.role === "ADMIN"
-                    ? "/admin/"
-                    : session.user.role === "BRAND"
-                      ? "/brand"
-                      : "/kol"
-                }
-                className="bg-blue-600 px-4 py-1.5 rounded-md hover:bg-blue-700 transition"
-              >
-                Account
-              </a>
-            ) : (
-              <a
-                href="/signin"
-                className="bg-white text-blue-600 px-4 py-1.5 rounded-md hover:bg-blue-100 transition"
-              >
-                Signin
-              </a>
-            )}
-          </nav>
-
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2 relative z-10"
-          >
-            <div className="w-6 h-6 flex flex-col justify-center space-y-1">
-              <div className={`w-full h-0.5 bg-white transition-all duration-300 ease-in-out ${isMenuOpen ? 'rotate-45 translate-y-1.5' : ''
-                }`}></div>
-              <div className={`w-full h-0.5 bg-white transition-all duration-300 ease-in-out ${isMenuOpen ? 'opacity-0 scale-0' : 'opacity-100 scale-100'
-                }`}></div>
-              <div className={`w-full h-0.5 bg-white transition-all duration-300 ease-in-out ${isMenuOpen ? '-rotate-45 -translate-y-1.5' : ''
-                }`}></div>
+          {/* Mobile Navigation */}
+          <div className={`lg:hidden transition-all duration-300 ease-in-out ${isMenuOpen ? 'max-h-96 opacity-100 mt-4' : 'max-h-0 opacity-0'
+            } overflow-hidden`}>
+            <div className="py-4 space-y-2">
+              {['Home', 'Services', 'Team', 'Platforms', 'Gallery', 'Contact'].map((item) => (
+                <button
+                  key={item}
+                  onClick={() => scrollToSection(item.toLowerCase())}
+                  className="block w-full text-left px-4 py-3 text-slate-300 hover:text-blue-400 hover:bg-slate-800/50 rounded-lg transition-all"
+                >
+                  {item}
+                </button>
+              ))}
+              <div className="border-t border-slate-800 pt-4 mt-4">
+                <button className="flex items-center space-x-2 px-4 py-3 text-slate-400 hover:text-blue-400 transition-colors">
+                  <Shield className="w-4 h-4" />
+                  <span>Privacy Policy</span>
+                </button>
+                <button className="flex items-center space-x-2 px-4 py-3 text-slate-400 hover:text-blue-400 transition-colors">
+                  <FileText className="w-4 h-4" />
+                  <span>Terms of Service</span>
+                </button>
+              </div>
             </div>
-          </button>
-        </div>
-
-        {/* Mobile Navigation */}
-        <div className={`md:hidden bg-slate-800 border-t border-blue-500/20 overflow-hidden transition-all duration-300 ease-in-out ${isMenuOpen ? 'max-h-80 opacity-100' : 'max-h-0 opacity-0'
-          }`}>
-          <nav className="flex flex-col space-y-4 p-4">
-            <a
-              href="#home"
-              className="hover:text-blue-400 transition-all duration-200 transform hover:translate-x-2"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Home
-            </a>
-            <a
-              href="#services"
-              className="hover:text-blue-400 transition-all duration-200 transform hover:translate-x-2"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Services
-            </a>
-            <a
-              href="#team"
-              className="hover:text-blue-400 transition-all duration-200 transform hover:translate-x-2"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Team
-            </a>
-            <a
-              href="#platforms"
-              className="hover:text-blue-400 transition-all duration-200 transform hover:translate-x-2"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Platforms
-            </a>
-            <a
-              href="#gallery"
-              className="hover:text-blue-400 transition-all duration-200 transform hover:translate-x-2"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Gallery
-            </a>
-            <a
-              href="#contact"
-              className="hover:text-blue-400 transition-all duration-200 transform hover:translate-x-2"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Contact
-            </a>
-            {session?.user ? (
-              <a
-                href={
-                  session.user.role === "ADMIN"
-                    ? "/admin/"
-                    : session.user.role === "BRAND"
-                      ? "/brand"
-                      : "/kol"
-                }
-                className="bg-blue-600 px-4 py-1.5 rounded-md hover:bg-blue-700 transition"
-              >
-                Account
-              </a>
-            ) : (
-              <a
-                href="/signin"
-                className="bg-white text-blue-600 px-4 py-1.5 rounded-md hover:bg-blue-100 transition"
-              >
-                Signin
-              </a>
-            )}
-          </nav>
+          </div>
         </div>
       </header>
 
-      {/* Hero Carousel */}
-      <section id="home" className="relative h-screen flex items-center justify-center overflow-hidden">
-        <div
-          className="absolute inset-0 transition-all duration-1000 bg-cover bg-center bg-no-repeat"
-          style={{
-            backgroundImage: `url(${carouselSlides[currentSlide].image})`
-          }}
-        >
-          {/**
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-900/70 via-slate-900/50 to-blue-900/70"></div>
-         */}
+      {/* Enhanced Hero Section */}
+      <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
+        {/* Background Image with Overlay */}
+        <div className="absolute inset-0">
+          <img
+            src={carouselSlides[currentSlide].image}
+            alt="Hero background"
+            className="w-full h-full object-cover transition-all duration-1000"
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-950/80 via-slate-900/60 to-blue-900/40" />
         </div>
 
-        <div className="relative z-10 text-center px-4 max-w-4xl">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 animate-fade-in">
-            {carouselSlides[currentSlide].title}
+        {/* Animated particles background */}
+        <div className="absolute inset-0 overflow-hidden">
+          {[...Array(20)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-2 h-2 bg-blue-400/20 rounded-full animate-pulse"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 3}s`,
+                animationDuration: `${3 + Math.random() * 2}s`
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Hero Content */}
+        <div className="relative z-10 text-center px-6 max-w-5xl mx-auto">
+          <div className="mb-8">
+            <span className="inline-block px-4 py-2 bg-blue-500/20 backdrop-blur-sm rounded-full text-blue-300 text-sm font-medium mb-6 border border-blue-400/30">
+              🚀 #1 Influencer Marketing Platform
+            </span>
+          </div>
+
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold mb-8 leading-tight">
+            <span className="bg-gradient-to-r from-white via-blue-100 to-blue-300 bg-clip-text text-transparent">
+              {carouselSlides[currentSlide].title}
+            </span>
           </h1>
-          <p className="text-xl md:text-2xl mb-8 text-blue-100">
+
+          <p className="text-xl md:text-2xl mb-12 text-slate-300 max-w-3xl mx-auto leading-relaxed">
             {carouselSlides[currentSlide].subtitle}
           </p>
-          <button className="bg-white text-blue-900 px-8 py-4 rounded-full font-semibold text-lg hover:bg-blue-50 transition-all transform hover:scale-105 shadow-2xl">
-            Get Started Today
-          </button>
+
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+            <button className="group bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-2xl font-semibold text-lg hover:from-blue-600 hover:to-purple-700 transition-all transform hover:scale-105 shadow-2xl hover:shadow-blue-500/25">
+              <span className="flex items-center space-x-2">
+                <span>{carouselSlides[currentSlide].cta}</span>
+                <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </span>
+            </button>
+
+            <button className="flex items-center space-x-3 text-white hover:text-blue-400 transition-colors group">
+              <div className="w-12 h-12 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center group-hover:bg-blue-500/20 transition-colors">
+                <Play className="w-5 h-5 fill-current" />
+              </div>
+              <span className="font-medium">Watch Demo</span>
+            </button>
+          </div>
+
+          {/* Stats Row */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-16 pt-16 border-t border-slate-700/50">
+            {stats.map((stat, index) => (
+              <div key={index} className="text-center">
+                <div className="text-3xl md:text-4xl font-bold text-white mb-2">{stat.number}</div>
+                <div className="text-slate-400 text-sm">{stat.label}</div>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Carousel Controls */}
+        {/* Enhanced Carousel Controls */}
         <button
           onClick={prevSlide}
-          className="absolute left-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-all"
+          className="absolute left-6 top-1/2 transform -translate-y-1/2 p-4 bg-slate-800/80 backdrop-blur-sm rounded-2xl hover:bg-slate-700/80 transition-all group"
         >
-          <ChevronLeft className="w-6 h-6" />
-        </button>
-        <button
-          onClick={nextSlide}
-          className="absolute right-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-all"
-        >
-          <ChevronRight className="w-6 h-6" />
+          <ChevronLeft className="w-6 h-6 group-hover:-translate-x-1 transition-transform" />
         </button>
 
-        {/* Carousel Indicators */}
+        <button
+          onClick={nextSlide}
+          className="absolute right-6 top-1/2 transform -translate-y-1/2 p-4 bg-slate-800/80 backdrop-blur-sm rounded-2xl hover:bg-slate-700/80 transition-all group"
+        >
+          <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+        </button>
+
+        {/* Enhanced Indicators */}
         <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-3">
           {carouselSlides.map((_, index) => (
             <button
               key={index}
               onClick={() => setCurrentSlide(index)}
-              className={`w-3 h-3 rounded-full transition-all ${index === currentSlide ? 'bg-white' : 'bg-white/50'
+              className={`w-12 h-2 rounded-full transition-all ${index === currentSlide
+                ? 'bg-gradient-to-r from-blue-400 to-purple-400'
+                : 'bg-slate-600 hover:bg-slate-500'
                 }`}
             />
           ))}
         </div>
       </section>
 
-      {/* Product Feature Section */}
-      <section id="feature" className="py-20 bg-gradient-to-br from-slate-900 to-blue-900/20">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            {/* Video Column */}
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl">
-              <div className="relative aspect-w-16 aspect-h-9">
-                <video
-                  className="w-full h-auto rounded-2xl"
-                  controls
-                  poster="/videos/poster.jpg" // Poster image untuk thumbnail
-                >
-                  <source src="/videos/agency-showcase.mp4" type="video/mp4" />
-                  Your browser does not support the video tag.
-                </video>
-              </div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-24 h-24 bg-blue-600/80 rounded-full flex items-center justify-center backdrop-blur-sm">
-                  <Play className="w-10 h-10 text-white fill-current" />
+      {/* Enhanced Services Section */}
+      <section id="services" className="py-24 bg-gradient-to-br from-slate-900 to-slate-800 relative">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-20">
+            <span className="inline-block px-4 py-2 bg-blue-500/20 backdrop-blur-sm rounded-full text-blue-300 text-sm font-medium mb-6">
+              Our Services
+            </span>
+            <h2 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
+              Comprehensive Solutions
+            </h2>
+            <p className="text-xl text-slate-400 max-w-3xl mx-auto">
+              From strategy to execution, we provide end-to-end influencer marketing services
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              {
+                icon: Users,
+                title: "Influencer Discovery",
+                description: "AI-powered matching with 50,000+ verified creators across all platforms and niches",
+                features: ["Advanced filtering", "Audience analysis", "Fraud detection"]
+              },
+              {
+                icon: TrendingUp,
+                title: "Campaign Management",
+                description: "Full-service campaign execution from planning to performance optimization",
+                features: ["Strategy development", "Content oversight", "Real-time optimization"]
+              },
+              {
+                icon: Star,
+                title: "Performance Analytics",
+                description: "Comprehensive reporting and insights to measure campaign success and ROI",
+                features: ["Real-time dashboards", "Custom reports", "ROI tracking"]
+              }
+            ].map((service, index) => (
+              <div
+                key={index}
+                className="group relative bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm p-8 rounded-3xl border border-slate-700/50 hover:border-blue-500/50 transition-all duration-500 hover:-translate-y-2"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                <div className="relative z-10">
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                    <service.icon className="w-8 h-8 text-white" />
+                  </div>
+
+                  <h3 className="text-2xl font-bold mb-4 text-white">{service.title}</h3>
+                  <p className="text-slate-300 mb-6 leading-relaxed">{service.description}</p>
+
+                  <ul className="space-y-2">
+                    {service.features.map((feature, idx) => (
+                      <li key={idx} className="flex items-center text-sm text-slate-400">
+                        <div className="w-1.5 h-1.5 bg-blue-400 rounded-full mr-3" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
-            </div>
-
-            {/* Text Column */}
-            <div>
-              <h2 className="text-4xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
-                Why Choose Our Agency?
-              </h2>
-              <p className="text-lg text-slate-300 mb-8">
-                We combine data-driven strategies with creative storytelling to deliver impactful
-                influencer campaigns that drive real business results.
-              </p>
-              <ul className="space-y-6">
-                <li className="flex items-start">
-                  <div className="bg-blue-500 rounded-full p-2 mr-4 mt-1">
-                    <Users className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold mb-1">Vetted Influencers</h3>
-                    <p className="text-slate-400">
-                      Access to our exclusive network of 10,000+ pre-vetted influencers across all major platforms.
-                    </p>
-                  </div>
-                </li>
-                <li className="flex items-start">
-                  <div className="bg-blue-500 rounded-full p-2 mr-4 mt-1">
-                    <TrendingUp className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold mb-1">Performance Analytics</h3>
-                    <p className="text-slate-400">
-                      Comprehensive campaign analytics to measure ROI, engagement, and conversion metrics.
-                    </p>
-                  </div>
-                </li>
-                <li className="flex items-start">
-                  <div className="bg-blue-500 rounded-full p-2 mr-4 mt-1">
-                    <Star className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold mb-1">Creative Excellence</h3>
-                    <p className="text-slate-400">
-                      Our creative team ensures content aligns with both brand identity and audience preferences.
-                    </p>
-                  </div>
-                </li>
-              </ul>
-              <div className="mt-10 flex flex-wrap gap-4">
-                <button className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-blue-700 transition-all">
-                  Request a Demo
-                </button>
-                <button className="bg-slate-700 text-white px-6 py-3 rounded-lg font-semibold hover:bg-slate-600 transition-all border border-slate-600">
-                  Download Brochure
-                </button>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Services Section */}
-      <section id="services" className="py-20 bg-slate-800">
-        <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-16 bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
-            Our Services
-          </h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-gradient-to-br from-slate-700 to-slate-800 p-8 rounded-2xl border border-blue-500/20 hover:border-blue-400/40 transition-all transform hover:scale-105">
-              <Users className="w-12 h-12 text-blue-400 mb-6" />
-              <h3 className="text-2xl font-bold mb-4">Influencer Matching</h3>
-              <p className="text-slate-300">Connect with the perfect influencers for your brand using our advanced matching algorithm and extensive network.</p>
-            </div>
-            <div className="bg-gradient-to-br from-slate-700 to-slate-800 p-8 rounded-2xl border border-blue-500/20 hover:border-blue-400/40 transition-all transform hover:scale-105">
-              <TrendingUp className="w-12 h-12 text-blue-400 mb-6" />
-              <h3 className="text-2xl font-bold mb-4">Campaign Management</h3>
-              <p className="text-slate-300">End-to-end campaign management from strategy development to performance analysis and optimization.</p>
-            </div>
-            <div className="bg-gradient-to-br from-slate-700 to-slate-800 p-8 rounded-2xl border border-blue-500/20 hover:border-blue-400/40 transition-all transform hover:scale-105">
-              <Star className="w-12 h-12 text-blue-400 mb-6" />
-              <h3 className="text-2xl font-bold mb-4">Brand Partnerships</h3>
-              <p className="text-slate-300">Strategic long-term partnerships that create authentic connections between brands and their target audiences.</p>
-            </div>
+      {/* Enhanced Team Section */}
+      <section id="team" className="py-24 bg-slate-950">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-20">
+            <span className="inline-block px-4 py-2 bg-purple-500/20 backdrop-blur-sm rounded-full text-purple-300 text-sm font-medium mb-6">
+              Our Team
+            </span>
+            <h2 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
+              Meet the Experts
+            </h2>
+            <p className="text-xl text-slate-400 max-w-3xl mx-auto">
+              Industry leaders with decades of combined experience in digital marketing and creator partnerships
+            </p>
           </div>
-        </div>
-      </section>
 
-      {/* Team Section */}
-      <section id="team" className="py-20 bg-slate-900">
-        <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-16 bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
-            Meet Our Team
-          </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {teamMembers.map((member, index) => (
-              <div key={index} className="text-center group">
-                <div className="relative mb-6 overflow-hidden rounded-2xl">
+              <div key={index} className="group text-center">
+                <div className="relative mb-6 overflow-hidden rounded-3xl">
                   <img
                     src={member.image}
                     alt={member.name}
-                    className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-110"
+                    className="w-full h-80 object-cover transition-transform duration-500 group-hover:scale-110"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-blue-900/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="absolute bottom-4 left-4 right-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 opacity-0 group-hover:opacity-100">
+                    <p className="text-sm text-slate-300">{member.bio}</p>
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold mb-2">{member.name}</h3>
+                <h3 className="text-xl font-bold mb-2 text-white">{member.name}</h3>
                 <p className="text-blue-400 font-medium">{member.role}</p>
               </div>
             ))}
@@ -476,23 +500,48 @@ const InfluencerAgency = () => {
         </div>
       </section>
 
-      {/* Platforms Section */}
-      <section id="platforms" className="py-20 bg-slate-800">
-        <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-16 bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
-            Platforms We Work With
-          </h2>
+      {/* Enhanced Platforms Section */}
+      <section id="platforms" className="py-24 bg-gradient-to-br from-slate-900 to-slate-800">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-20">
+            <span className="inline-block px-4 py-2 bg-green-500/20 backdrop-blur-sm rounded-full text-green-300 text-sm font-medium mb-6">
+              Platforms
+            </span>
+            <h2 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
+              Global Reach
+            </h2>
+            <p className="text-xl text-slate-400 max-w-3xl mx-auto">
+              Connect with audiences across all major social media platforms with our extensive creator network
+            </p>
+          </div>
+
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {platforms.map((platform, index) => {
               const IconComponent = platform.icon;
               return (
-                <div key={index} className="bg-gradient-to-br from-slate-700 to-slate-800 p-8 rounded-2xl border border-blue-500/20 hover:border-blue-400/40 transition-all transform hover:scale-105 text-center">
-                  <IconComponent
-                    className="w-16 h-16 mx-auto mb-4"
-                    style={{ color: platform.color }}
-                  />
-                  <h3 className="text-2xl font-bold mb-2">{platform.name}</h3>
-                  <p className="text-slate-300 text-lg">{platform.users} Users</p>
+                <div
+                  key={index}
+                  className="group relative bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm p-8 rounded-3xl border border-slate-700/50 hover:border-opacity-100 transition-all duration-500 hover:-translate-y-2 text-center"
+                  style={{ '--border-color': platform.color, } as React.CSSProperties}
+                >
+                  <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-10 transition-opacity duration-500"
+                    style={{ backgroundColor: platform.color }} />
+
+                  <div className="relative z-10">
+                    <IconComponent
+                      className="w-20 h-20 mx-auto mb-6 transition-transform duration-300 group-hover:scale-110"
+                      style={{ color: platform.color }}
+                    />
+                    <h3 className="text-2xl font-bold mb-2 text-white">{platform.name}</h3>
+                    <p className="text-3xl font-bold mb-2" style={{ color: platform.color }}>
+                      {platform.users}
+                    </p>
+                    <p className="text-slate-400">Active Users</p>
+                    <div className="mt-4 inline-flex items-center px-3 py-1 bg-green-500/20 rounded-full text-green-300 text-sm">
+                      <TrendingUp className="w-4 h-4 mr-1" />
+                      {platform.growth} growth
+                    </div>
+                  </div>
                 </div>
               );
             })}
@@ -500,18 +549,18 @@ const InfluencerAgency = () => {
         </div>
       </section>
 
-      {/* Video Gallery Section */}
-      <section id="gallery" className="py-20 bg-slate-900">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center justify-center mb-4">
-              <Video className="w-8 h-8 text-blue-500 mr-3" />
-              <h2 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
-                Video Gallery
-              </h2>
-            </div>
-            <p className="text-slate-400 max-w-2xl mx-auto">
-              Explore our portfolio of successful campaigns and influencer collaborations
+      {/* Enhanced Gallery Section */}
+      <section id="gallery" className="py-24 bg-slate-950">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-20">
+            <span className="inline-block px-4 py-2 bg-red-500/20 backdrop-blur-sm rounded-full text-red-300 text-sm font-medium mb-6">
+              Portfolio
+            </span>
+            <h2 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
+              Success Stories
+            </h2>
+            <p className="text-xl text-slate-400 max-w-3xl mx-auto">
+              Explore our portfolio of successful campaigns and influencer collaborations that drove real results
             </p>
           </div>
 
@@ -519,25 +568,26 @@ const InfluencerAgency = () => {
             {videoGallery.map((video, index) => (
               <div
                 key={index}
-                className="group relative overflow-hidden rounded-2xl cursor-pointer border border-slate-700 hover:border-blue-500 transition-all duration-300 transform hover:-translate-y-1"
+                className="group relative overflow-hidden rounded-3xl cursor-pointer border border-slate-800 hover:border-blue-500/50 transition-all duration-500 transform hover:-translate-y-2"
                 onClick={() => openVideo(video.id)}
               >
-                <div className="relative">
+                <div className="relative overflow-hidden">
                   <img
                     src={video.thumbnail}
                     alt={video.title}
-                    className="w-full h-52 object-cover transition-transform duration-500 group-hover:scale-110"
+                    className="w-full h-64 object-cover transition-transform duration-700 group-hover:scale-110"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-90 group-hover:opacity-100 transition-opacity"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center transform group-hover:scale-110 transition-transform">
-                      <Play className="w-6 h-6 text-white fill-current" />
+                    <div className="w-20 h-20 bg-blue-600/90 backdrop-blur-sm rounded-full flex items-center justify-center transform group-hover:scale-110 transition-all duration-300 shadow-2xl">
+                      <Play className="w-8 h-8 text-white fill-current ml-1" />
                     </div>
                   </div>
                 </div>
-                <div className="p-6 bg-gradient-to-b from-slate-800 to-slate-900">
-                  <h3 className="text-xl font-bold mb-2">{video.title}</h3>
-                  <p className="text-slate-400">{video.description}</p>
+
+                <div className="p-6 bg-gradient-to-b from-slate-800/50 to-slate-900">
+                  <h3 className="text-xl font-bold mb-2 text-white">{video.title}</h3>
+                  <p className="text-slate-400 text-sm">{video.description}</p>
                 </div>
               </div>
             ))}
@@ -545,104 +595,250 @@ const InfluencerAgency = () => {
         </div>
       </section>
 
-      {/* Contact Section */}
-      <section id="contact" className="py-20 bg-slate-900">
-        <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-16 bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
-            Get In Touch
-          </h2>
-          <div className="grid md:grid-cols-2 gap-12 max-w-6xl mx-auto">
-            <div>
-              <h3 className="text-2xl font-bold mb-8">Ready to Start Your Campaign?</h3>
+      {/* Enhanced Contact Section */}
+      <section id="contact" className="py-24 bg-gradient-to-br from-slate-900 to-slate-800 relative">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-20">
+            <span className="inline-block px-4 py-2 bg-yellow-500/20 backdrop-blur-sm rounded-full text-yellow-300 text-sm font-medium mb-6">
+              Contact Us
+            </span>
+            <h2 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
+              Start Your Journey
+            </h2>
+            <p className="text-xl text-slate-400 max-w-3xl mx-auto">
+              Ready to transform your brand's digital presence? Let's create something amazing together.
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-16 max-w-6xl mx-auto">
+            {/* Contact Info */}
+            <div className="space-y-8">
+              <div>
+                <h3 className="text-3xl font-bold mb-8 text-white">Get in Touch</h3>
+                <p className="text-slate-300 text-lg mb-8 leading-relaxed">
+                  We're here to help you navigate the world of influencer marketing.
+                  Reach out to discuss your next campaign or partnership opportunity.
+                </p>
+              </div>
+
               <div className="space-y-6">
-                <div className="flex items-center space-x-4">
-                  <Mail className="w-6 h-6 text-blue-400" />
-                  <span className="text-lg">contact@influencehub.com</span>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <Phone className="w-6 h-6 text-blue-400" />
-                  <span className="text-lg">+1 (555) 123-4567</span>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <MapPin className="w-6 h-6 text-blue-400" />
-                  <span className="text-lg">Jakarta, Indonesia</span>
+                {[
+                  { icon: Mail, label: "Email", value: "hello@gayatridigital.com", href: "mailto:hello@gayatridigital.com" },
+                  { icon: Phone, label: "Phone", value: "+62 21 1234 5678", href: "tel:+622112345678" },
+                  { icon: MapPin, label: "Location", value: "Jakarta, Indonesia", href: "#" }
+                ].map((contact, index) => (
+                  <a
+                    key={index}
+                    href={contact.href}
+                    className="flex items-center space-x-4 p-4 rounded-2xl bg-slate-800/50 hover:bg-slate-700/50 transition-all duration-300 group"
+                  >
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <contact.icon className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-slate-400 text-sm">{contact.label}</p>
+                      <p className="text-white font-medium">{contact.value}</p>
+                    </div>
+                  </a>
+                ))}
+              </div>
+
+              {/* Social Links */}
+              <div className="pt-8">
+                <h4 className="text-lg font-semibold mb-4 text-white">Follow Us</h4>
+                <div className="flex space-x-4">
+                  {[
+                    { icon: FaInstagram, color: "#E4405F", href: "#" },
+                    { icon: FaTwitter, color: "#1DA1F2", href: "#" },
+                    { icon: FaLinkedin, color: "#0077B5", href: "#" },
+                    { icon: FaYoutube, color: "#FF0000", href: "#" }
+                  ].map((social, index) => (
+                    <a
+                      key={index}
+                      href={social.href}
+                      className="w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center hover:bg-slate-700 transition-all duration-300 transform hover:scale-110 group"
+                      style={{ '--hover-color': social.color, } as React.CSSProperties}
+                    >
+                      <social.icon
+                        className="w-5 h-5 text-slate-400 group-hover:text-white transition-colors"
+                      />
+                    </a>
+                  ))}
                 </div>
               </div>
             </div>
-            <div className="bg-gradient-to-br from-slate-700 to-slate-800 p-8 rounded-2xl border border-blue-500/20">
-              <div className="space-y-6">
-                <div>
-                  <input
-                    type="text"
-                    placeholder="Your Name"
-                    className="w-full px-4 py-3 bg-slate-600 border border-slate-500 rounded-lg focus:border-blue-400 focus:outline-none transition-colors"
-                  />
+
+            {/* Contact Form */}
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm p-8 rounded-3xl border border-slate-700/50">
+              <form className="space-y-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">First Name</label>
+                    <input
+                      type="text"
+                      className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl focus:border-blue-400 focus:outline-none transition-colors text-white placeholder-slate-400"
+                      placeholder="John"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Last Name</label>
+                    <input
+                      type="text"
+                      className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl focus:border-blue-400 focus:outline-none transition-colors text-white placeholder-slate-400"
+                      placeholder="Doe"
+                    />
+                  </div>
                 </div>
+
                 <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Email</label>
                   <input
                     type="email"
-                    placeholder="Your Email"
-                    className="w-full px-4 py-3 bg-slate-600 border border-slate-500 rounded-lg focus:border-blue-400 focus:outline-none transition-colors"
+                    className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl focus:border-blue-400 focus:outline-none transition-colors text-white placeholder-slate-400"
+                    placeholder="john@example.com"
                   />
                 </div>
+
                 <div>
-                  <textarea
-                    placeholder="Your Message"
-                    rows={4}
-                    className="w-full px-4 py-3 bg-slate-600 border border-slate-500 rounded-lg focus:border-blue-400 focus:outline-none transition-colors resize-none"
-                  ></textarea>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Company</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl focus:border-blue-400 focus:outline-none transition-colors text-white placeholder-slate-400"
+                    placeholder="Your Company"
+                  />
                 </div>
-                <button className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-blue-700 transition-all transform hover:scale-105">
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Project Type</label>
+                  <select className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl focus:border-blue-400 focus:outline-none transition-colors text-white">
+                    <option value="">Select a service</option>
+                    <option value="influencer-campaign">Influencer Campaign</option>
+                    <option value="brand-partnership">Brand Partnership</option>
+                    <option value="content-creation">Content Creation</option>
+                    <option value="consulting">Strategy Consulting</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Message</label>
+                  <textarea
+                    rows={4}
+                    className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl focus:border-blue-400 focus:outline-none transition-colors resize-none text-white placeholder-slate-400"
+                    placeholder="Tell us about your project goals and requirements..."
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-4 rounded-xl font-semibold hover:from-blue-600 hover:to-purple-700 transition-all transform hover:scale-105 shadow-lg hover:shadow-blue-500/25"
+                >
                   Send Message
                 </button>
-              </div>
+              </form>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-slate-950 py-12 border-t border-blue-500/20">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
-              <div className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent mb-4">
-                InfluenceHub
+      {/* Enhanced Footer */}
+      <footer className="bg-slate-950 py-16 border-t border-slate-800">
+        <div className="container mx-auto px-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
+            {/* Company Info */}
+            <div className="lg:col-span-2">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                  <span className="text-white font-bold text-xl">G</span>
+                </div>
+                <div className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-blue-600 bg-clip-text text-transparent">
+                  GayatriDigital
+                </div>
               </div>
-              <p className="text-slate-400">
-                Connecting brands with influential creators to build authentic relationships and drive meaningful engagement.
+              <p className="text-slate-400 text-lg leading-relaxed mb-6 max-w-md">
+                Transforming brands through authentic influencer partnerships and data-driven marketing strategies.
+                Your success is our mission.
               </p>
-            </div>
-            <div>
-              <h4 className="text-lg font-semibold mb-4 text-blue-400">Services</h4>
-              <ul className="space-y-2 text-slate-400">
-                <li>Influencer Matching</li>
-                <li>Campaign Management</li>
-                <li>Brand Partnerships</li>
-                <li>Analytics & Reporting</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-lg font-semibold mb-4 text-blue-400">Company</h4>
-              <ul className="space-y-2 text-slate-400">
-                <li>About Us</li>
-                <li>Our Team</li>
-                <li>Careers</li>
-                <li>Press</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-lg font-semibold mb-4 text-blue-400">Follow Us</h4>
               <div className="flex space-x-4">
-                <FaInstagram className="w-6 h-6 text-slate-400 hover:text-blue-400 cursor-pointer transition-colors" />
-                <FaTwitter className="w-6 h-6 text-slate-400 hover:text-blue-400 cursor-pointer transition-colors" />
-                <FaLinkedin className="w-6 h-6 text-slate-400 hover:text-blue-400 cursor-pointer transition-colors" />
-                <FaFacebook className="w-6 h-6 text-slate-400 hover:text-blue-400 cursor-pointer transition-colors" />
+                {[
+                  { icon: FaInstagram, href: "#", color: "#E4405F" },
+                  { icon: FaTwitter, href: "#", color: "#1DA1F2" },
+                  { icon: FaLinkedin, href: "#", color: "#0077B5" },
+                  { icon: FaYoutube, href: "#", color: "#FF0000" },
+                  { icon: FaTiktok, href: "#", color: "#000000" }
+                ].map((social, index) => (
+                  <a
+                    key={index}
+                    href={social.href}
+                    className="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center hover:bg-slate-700 transition-all duration-300 transform hover:scale-110 group"
+                  >
+                    <social.icon className="w-5 h-5 text-slate-400 group-hover:text-white transition-colors" />
+                  </a>
+                ))}
               </div>
+            </div>
+
+            {/* Services */}
+            <div>
+              <h4 className="text-lg font-semibold mb-6 text-white">Services</h4>
+              <ul className="space-y-3">
+                {[
+                  'Influencer Discovery',
+                  'Campaign Management',
+                  'Content Creation',
+                  'Performance Analytics',
+                  'Brand Partnerships',
+                  'Strategy Consulting'
+                ].map((service, index) => (
+                  <li key={index}>
+                    <a href="#" className="text-slate-400 hover:text-blue-400 transition-colors">
+                      {service}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Company */}
+            <div>
+              <h4 className="text-lg font-semibold mb-6 text-white">Company</h4>
+              <ul className="space-y-3">
+                {[
+                  'About Us',
+                  'Our Team',
+                  'Careers',
+                  'News & Press',
+                  'Case Studies',
+                  'Contact'
+                ].map((item, index) => (
+                  <li key={index}>
+                    <a href="#" className="text-slate-400 hover:text-blue-400 transition-colors">
+                      {item}
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
-          <div className="border-t border-slate-800 mt-8 pt-8 text-center text-slate-400">
-            <p>&copy; 2025 InfluenceHub. All rights reserved.</p>
+
+          {/* Bottom Section */}
+          <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+            <div className="text-slate-400 text-sm">
+              © 2025 GayatriDigital. All rights reserved.
+            </div>
+
+            <div className="flex items-center space-x-6 text-sm">
+              <a href="#" className="text-slate-400 hover:text-blue-400 transition-colors flex items-center space-x-1">
+                <Shield className="w-4 h-4" />
+                <span>Privacy Policy</span>
+              </a>
+              <a href="#" className="text-slate-400 hover:text-blue-400 transition-colors flex items-center space-x-1">
+                <FileText className="w-4 h-4" />
+                <span>Terms of Service</span>
+              </a>
+              <a href="#" className="text-slate-400 hover:text-blue-400 transition-colors">
+                Cookie Policy
+              </a>
+            </div>
           </div>
         </div>
       </footer>

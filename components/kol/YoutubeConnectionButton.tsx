@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { connectYouTubeAccount, disconnectYouTubeAccount } from '@/lib/youtube.actions';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react'
+import { toast } from 'sonner';
 
 interface YouTubeConnectionButtonProps {
   isConnected?: boolean;
@@ -23,7 +24,7 @@ export function YouTubeConnectionButton(props: YouTubeConnectionButtonProps) {
       await connectYouTubeAccount();
     } catch (error) {
       console.error('YouTube connection error:', error);
-      // Optionally show error toast or message
+      toast.error('Gagal menghubungkan akun YouTube. Silakan coba lagi.');
     } finally {
       setIsLoading(false);
     }

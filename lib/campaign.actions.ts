@@ -1387,8 +1387,8 @@ export const approveCampaignByAdmin = async (campaignId: string) => {
       await createNotification({
         userId: campaign.brands.userId,
         type: 'SYSTEM',
-        title: 'Campaign Approved',
-        message: `Your campaign "${campaign.name}" has been approved and is now active.`,
+        title: 'Campaign Disetujui',
+        message: `Campaign dengan Nama "${campaign.name}" telah disetujui sekarang Campaign anda telah aktif.`,
         data: {
           campaignId: campaign.id,
           approvedAt: new Date().toISOString()
@@ -1485,8 +1485,8 @@ export const rejectCampaignByAdmin = async (campaignId: string, reason?: string)
       await createNotification({
         userId: campaign.brands.userId,
         type: 'SYSTEM',
-        title: 'Campaign Rejected',
-        message: `Your campaign "${campaign.name}" has been rejected. ${reason ? `Reason: ${reason}` : 'Please contact admin for more details.'}`,
+        title: 'Campaign Ditolak',
+        message: `Campaign dengan Nama "${campaign.name}" telah ditolak. ${reason ? `Reason: ${reason}` : 'Silakan hubungi tim kami untuk info lebih lanjut.'}`,
         data: {
           campaignId: campaign.id,
           rejectedAt: new Date().toISOString(),

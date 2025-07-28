@@ -170,6 +170,7 @@ model InfluencerPlatform {
   username          String
   followers         Int        @default(0)
   posts             Int        @default(0)
+  views             Int        @default(0)
   platformData      Json?      // Menyimpan data tambahan dari platform
   accessToken       String?    // Token akses untuk platform
   refreshToken      String?    // Token refresh untuk platform

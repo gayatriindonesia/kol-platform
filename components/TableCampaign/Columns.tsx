@@ -5,9 +5,9 @@ import { ArrowUpDown, Pencil, Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Campaign } from "@prisma/client"
-import { Badge } from "../ui/badge"
-import { CampaignActionButton } from "../CampaignActionButton"
+import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
+import { FaEye } from "react-icons/fa"
 // import { PlatformWithServices } from "@/types/platform"
 // export type PlatformColumn = Platform
 
@@ -80,18 +80,37 @@ export const columns: ColumnDef<Campaign>[] = [
     },
   },
   {
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row }) => {
+      const status = row.getValue("status") as string;
+
+      const statusColorMap: Record<string, string> = {
+        PENDING: "bg-yellow-100 text-yellow-800",
+        ACTIVE: "bg-green-100 text-green-800",
+        REJECTED: "bg-red-100 text-red-800",
+      };
+
+      return (
+        <span
+          className={`px-2 py-1 rounded-full text-xs font-medium ${statusColorMap[status] || "bg-gray-100 text-gray-800"}`}
+        >
+          {status}
+        </span>
+      );
+    },
+  },
+  {
     id: "actions",
     header: "Actions",
     cell: ({ row }) => {
       const campaign = row.original;
       return (
         <div className="flex gap-2">
-          {/* Play/Stop Button berdasarkan status */}
-          <CampaignActionButton campaign={campaign} />
 
           <Link href={`/brand/campaigns/${campaign.id}`}>
             <Button variant="outline" size="sm">
-              Detail
+              <FaEye className="h-4 w-4" />
             </Button>
           </Link>
           {/* Edit Button */}

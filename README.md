@@ -1,6 +1,6 @@
-# Job Application Form with Nextjs 14, Zustand, and Zod Validation
+# Application KOL (Key Opinion Leader) Form with Nextjs 14, Zustand, and Zod Validation
 
-A multi-step Job Application form built using Nextjs 14, Zustand for state management, and Zod for schema validation. This form captures personal information, experience, and educational background from applicants, with validation to ensure correctness of the data entered.
+A multi-step campaign creation form built using Nextjs 14, Zustand for status management, and Zod for schema validation. This form captures personal information, campaign type, campaign objective, and influencer criteria, with validation to ensure the accuracy of the entered data.
 
 ![thumbnail](./thumbnail.png)
 
@@ -10,7 +10,7 @@ A multi-step Job Application form built using Nextjs 14, Zustand for state manag
 1.  **Clone the repository:**
 
     ```bash
-    git clone 
+    git clone https://github.com/gayatriindonesia/kol-platform.git
     ```
 
 2.  **Install Dependencies**
