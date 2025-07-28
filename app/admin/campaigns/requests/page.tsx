@@ -15,9 +15,7 @@ import {
 } from 'lucide-react'
 
 import {
-  approveCampaignByAdmin,
   getAllDirectCampaigns,
-  rejectCampaignByAdmin,
 } from '@/lib/campaign.actions'
 import { toast } from 'sonner'
 import { Campaign, CampaignStatus } from '@/types/campaign'
@@ -26,7 +24,6 @@ export default function RequestCampaign() {
   const router = useRouter()
 
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
-  const [loadingId, setLoadingId] = useState<string | null>(null)
   const [fetchLoading, setFetchLoading] = useState(true)
   const [filter, setFilter] = useState<CampaignStatus | 'ALL'>('PENDING')
 
@@ -48,46 +45,6 @@ export default function RequestCampaign() {
     } finally {
       setFetchLoading(false)
     }
-  }
-
-  const handleApprove = async (id: string) => {
-    setLoadingId(id)
-    try {
-      const result = await approveCampaignByAdmin(id)
-      if (result.success) {
-        toast.success(result.message)
-        updateStatus(id, 'ACTIVE')
-      } else {
-        toast.error(result.message)
-      }
-    } catch {
-      toast.error('Failed to approve campaign')
-    } finally {
-      setLoadingId(null)
-    }
-  }
-
-  const handleReject = async (id: string) => {
-    setLoadingId(id)
-    try {
-      const result = await rejectCampaignByAdmin(id)
-      if (result.success) {
-        toast.success(result.message)
-        updateStatus(id, 'REJECTED')
-      } else {
-        toast.error(result.message)
-      }
-    } catch {
-      toast.error('Failed to reject campaign')
-    } finally {
-      setLoadingId(null)
-    }
-  }
-
-  const updateStatus = (id: string, newStatus: CampaignStatus) => {
-    setCampaigns(prev =>
-      prev.map(c => (c.id === id ? { ...c, status: newStatus } : c))
-    )
   }
 
   const formatCurrency = (amount: number) =>

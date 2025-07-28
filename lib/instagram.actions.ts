@@ -12,7 +12,7 @@ const INSTAGRAM_APP_SECRET = process.env.INSTAGRAM_APP_SECRET;
 const INSTAGRAM_REDIRECT_URI = process.env.INSTAGRAM_REDIRECT_URI;
 
 // Validate environment variables
-function validateConfig() {
+export async function validateConfig() {
   if (!INSTAGRAM_CLIENT_ID || !INSTAGRAM_APP_SECRET || !INSTAGRAM_REDIRECT_URI) {
     throw new Error("Instagram environment variables not configured. Please set INSTAGRAM_CLIENT_ID, INSTAGRAM_APP_SECRET, and INSTAGRAM_REDIRECT_URI");
   }

@@ -23,27 +23,6 @@ import {
 import { toast } from 'sonner'
 import { CampaignStatus } from '@/types/campaign'
 
-// Menggunakan any untuk menghindari type error, dan melakukan safe access
-interface SafeCampaign {
-  id: string
-  name: string
-  type: string
-  startDate: string
-  endDate: string
-  status: CampaignStatus
-  description?: string
-  budget?: number
-  targetAudience?: string
-  brands: {
-    id: string
-    name: string
-    user: {
-      name: string | null
-      email: string | null
-    }
-  }
-}
-
 export default function CampaignDetailPage() {
   const router = useRouter()
   const params = useParams()

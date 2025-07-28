@@ -11,7 +11,6 @@ import {
   TrendingUp,
   Users,
   Heart,
-  MessageSquare,
   BarChart3,
   Calendar,
   Image as ImageIcon,
@@ -24,7 +23,6 @@ import {
 } from 'lucide-react';
 import {
   getInstagramInsights,
-  getInstagramMediaInsights,
   advancedInstagramSync
 } from '@/lib/instagram-advanced.actions';
 
@@ -39,7 +37,6 @@ export default function InstagramAdvancedPanel({
 }: InstagramAdvancedPanelProps) {
   const [loading, setLoading] = useState(false);
   const [insights, setInsights] = useState<any>(null);
-  const [mediaInsights, setMediaInsights] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -450,7 +447,7 @@ export default function InstagramAdvancedPanel({
               ) : (
                 <div className="text-center py-8">
                   <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-600 mb-4">Click "Fetch Insights" to load your Instagram performance data</p>
+                  <p className="text-gray-600 mb-4">Click &quot;Fetch Insights&quot; to load your Instagram performance data</p>
                 </div>
               )}
             </CardContent>

@@ -6,7 +6,6 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import { validateConfig } from '../lib/instagram.actions';
 
 const prisma = new PrismaClient();
 
@@ -44,8 +43,12 @@ async function testInstagramSetup() {
       console.log(`   ${exists ? '✅' : '❌'} ${name} platform`);
     });
   } catch (error) {
+  if (error instanceof Error) {
     console.log('   ❌ Database connection failed:', error.message);
+  } else {
+    console.log('   ❌ Database connection failed:', error);
   }
+}
 
   // 3. Check OAuth URL generation
   console.log('\n3. OAuth Configuration:');
@@ -64,8 +67,12 @@ async function testInstagramSetup() {
       console.log('   ❌ Cannot generate OAuth URL - missing environment variables');
     }
   } catch (error) {
-    console.log('   ❌ OAuth URL generation failed:', error.message);
+  if (error instanceof Error) {
+    console.log('   ❌ Database connection failed:', error.message);
+  } else {
+    console.log('   ❌ Database connection failed:', error);
   }
+}
 
   // 4. Summary and recommendations
   console.log('\n4. Setup Status:');

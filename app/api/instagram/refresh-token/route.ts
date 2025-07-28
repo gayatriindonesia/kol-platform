@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 
@@ -7,7 +7,7 @@ import { db } from "@/lib/db";
  * Instagram Basic Display tokens do not expire, but this endpoint
  * can be used for future token refresh functionality
  */
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     const session = await auth();
     

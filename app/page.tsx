@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Users, TrendingUp, Star, Mail, Phone, MapPin, Video, Play, X, Shield, FileText, Menu, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Users, TrendingUp, Star, Mail, Phone, MapPin, Play, X, Shield, FileText, Menu, Loader2 } from 'lucide-react';
 import { FaFacebook, FaInstagram, FaLinkedin, FaTiktok, FaTwitter, FaYoutube } from 'react-icons/fa';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -606,7 +606,7 @@ const InfluencerAgency = () => {
               Start Your Journey
             </h2>
             <p className="text-xl text-slate-400 max-w-3xl mx-auto">
-              Ready to transform your brand's digital presence? Let's create something amazing together.
+              Ready to transform your brand&apos;s digital presence? Let&apos;s create something amazing together.
             </p>
           </div>
 
@@ -616,7 +616,7 @@ const InfluencerAgency = () => {
               <div>
                 <h3 className="text-3xl font-bold mb-8 text-white">Get in Touch</h3>
                 <p className="text-slate-300 text-lg mb-8 leading-relaxed">
-                  We're here to help you navigate the world of influencer marketing.
+                  We&apos;re here to help you navigate the world of influencer marketing.
                   Reach out to discuss your next campaign or partnership opportunity.
                 </p>
               </div>
