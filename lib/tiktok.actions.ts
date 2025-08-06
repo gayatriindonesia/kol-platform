@@ -300,7 +300,8 @@ export async function handleTikTokCallback(code: string, state: string) {
     }
 
     const userInfo = userData.data.user;
-    let totalLikes = 0, totalComments = 0, totalShares = 0, totalSaves = 0, totalViews = 0, engagementRate = 0;
+    // let totalLikes = 0, totalComments = 0, totalShares = 0, totalSaves = 0, totalViews = 0, engagementRate = 0;
+    let totalLikes = 0, totalComments = 0, totalShares = 0, totalSaves = 0, engagementRate = 0;
     const videoResult = await fetchTikTokVideos(access_token);
 
     if (videoResult.success && videoResult.data?.data?.videos) {
@@ -310,7 +311,7 @@ export async function handleTikTokCallback(code: string, state: string) {
         totalComments += video.comment_count || 0;
         totalShares += video.share_count || 0;
         totalSaves += video.save_count || 0;
-        totalViews += video.view_count || 0;
+        // totalViews += video.view_count || 0;
       });
       const totalFollowers = userInfo.follower_count || 1;
       const totalPosts = Math.max(videos.length, 1);
@@ -372,6 +373,7 @@ export async function handleTikTokCallback(code: string, state: string) {
         where: { id: existingConnection.id },
         data: commonData,
       });
+      console.log('Updated influencerPlatform:', updateResult);
       influencerPlatformId = existingConnection.id;
     } else {
       const createResult = await db.influencerPlatform.create({

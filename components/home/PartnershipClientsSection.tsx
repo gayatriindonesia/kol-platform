@@ -66,7 +66,7 @@ const PartnershipClientsSection: React.FC<PartnershipClientsSectionProps> = ({
             Trusted by Industry Leaders
           </h2>
           <p className="text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed">
-            We've partnered with leading brands across industries to deliver exceptional influencer marketing campaigns that drive real business results.
+            We&apos;ve partnered with leading brands across industries to deliver exceptional influencer marketing campaigns that drive real business results.
           </p>
         </div>
 
@@ -79,7 +79,7 @@ const PartnershipClientsSection: React.FC<PartnershipClientsSectionProps> = ({
                 className="flex transition-transform duration-700 ease-in-out"
                 style={{ transform: `translateX(-${currentSlide * 100}%)` }}
               >
-                {featuredClients.map((client, index) => (
+                {featuredClients.map((client) => (
                   <div key={client.id} className="w-full flex-shrink-0">
                     <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm p-8 md:p-12 rounded-3xl border border-slate-700/50">
                       <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -104,7 +104,7 @@ const PartnershipClientsSection: React.FC<PartnershipClientsSectionProps> = ({
                           {client.testimonial && (
                             <blockquote className="border-l-4 border-blue-500 pl-6 mb-6">
                               <p className="text-slate-200 italic text-lg mb-4">
-                                "{client.testimonial}"
+                                &apos;{client.testimonial}&apos;
                               </p>
                               <footer className="text-slate-400">
                                 <strong className="text-white">{client.author}</strong>
@@ -219,7 +219,7 @@ const PartnershipClientsSection: React.FC<PartnershipClientsSectionProps> = ({
 
         {/* Client Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredClients.map((client, index) => (
+          {filteredClients.map((client) => (
             <div
               key={client.id}
               className="group bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-sm p-6 rounded-2xl border border-slate-700/30 hover:border-blue-500/50 transition-all duration-500 hover:-translate-y-2"

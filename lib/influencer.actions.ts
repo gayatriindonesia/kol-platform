@@ -130,7 +130,7 @@ export async function getInfluencerById(id: string) {
         const hasAccess = await db.campaignInvitation.findFirst({
           where: {
             influencerId: id,
-            Campaign: {
+            campaign: {
               brands: {
                 userId: session.user.id,
               },

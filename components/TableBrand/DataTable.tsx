@@ -35,7 +35,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
-import { Loader2, Plus, Search, SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react"
+import { Loader2, Plus, Search, SlidersHorizontal, ChevronRight } from "lucide-react"
 import { createBrand, deleteBrand, updateBrand } from "@/lib/brand.actions"
 import { Label } from "@/components/ui/label"
 import { useEffect } from "react"

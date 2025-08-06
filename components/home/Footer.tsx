@@ -46,9 +46,9 @@ const Footer = () => {
               </div>
             </div>
             <p className="text-slate-400 text-lg leading-relaxed mb-6 max-w-md">
-              Let's make your brand brilliant!
+              Let&apos;s make your brand brilliant!
 
-              If you would like to work with us or just want to get in touch, we'd love to hear from you!
+              If you would like to work with us or just want to get in touch, we&apos;d love to hear from you!
             </p>
             <div className="flex space-x-4">
               {socialLinks.map((social, index) => (

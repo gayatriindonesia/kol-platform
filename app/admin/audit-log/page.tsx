@@ -19,9 +19,9 @@ export default async function AuditLogPage() {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="text-sm">
-                    <span className="font-medium text-blue-600">{log.user.name}</span>{" "}
+                    <span className="font-medium text-blue-600">{log.User_AuditLog_userIdToUser.name}</span>{" "}
                     <span className="text-gray-700">{log.message}</span>{" "}
-                    <span className="font-medium text-pink-600">({log.target.name})</span>
+                    <span className="font-medium text-pink-600">({log.User_AuditLog_targetIdToUser.name})</span>
                   </div>
                   <div className="flex items-center gap-1 text-xs text-gray-500">
                     <CalendarDays className="h-4 w-4" />

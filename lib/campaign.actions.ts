@@ -452,6 +452,7 @@ export async function sendCampaignInvitation({
           brandId,
           message,
           status: CampaignStatus.PENDING,
+          updatedAt: new Date()
         },
       })
 

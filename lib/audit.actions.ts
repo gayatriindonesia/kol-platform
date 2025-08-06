@@ -4,8 +4,8 @@ export async function getAuditLogs() {
   return await db.auditLog.findMany({
     orderBy: { createdAt: 'desc' },
     include: {
-      user: true,
-      target: true,
+      User_AuditLog_userIdToUser: true,
+      User_AuditLog_targetIdToUser: true,
     },
   })
 }

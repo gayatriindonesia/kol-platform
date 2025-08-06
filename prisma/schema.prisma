@@ -206,7 +206,7 @@ model OAuthState {
 }
 
 model AuditLog {
-  id                           String   @id
+  id                           String   @id @default(cuid())
   action                       String
   message                      String
   userId                       String
@@ -217,7 +217,7 @@ model AuditLog {
 }
 
 model CampaignInvitation {
-  id              String         @id
+  id              String         @id @default(cuid())
   campaignId      String
   influencerId    String
   status          CampaignStatus @default(PENDING)
@@ -227,16 +227,16 @@ model CampaignInvitation {
   respondedAt     DateTime?
   brandId         String
   createdAt       DateTime       @default(now())
-  updatedAt       DateTime
-  Brand           Brand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  Campaign        Campaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  Influencer      Influencer     @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+  updatedAt       DateTime        @updatedAt
+  brand           Brand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  campaign        Campaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  influencer      Influencer     @relation(fields: [influencerId], references: [id], onDelete: Cascade)
 
   @@unique([campaignId, influencerId])
 }
 
 model Notification {
-  id        String           @id
+  id        String          @id @default(cuid())
   userId    String
   role      UserRole?
   title     String

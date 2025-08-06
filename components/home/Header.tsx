@@ -3,10 +3,6 @@
 import React from 'react';
 import Link from 'next/link';
 import { Shield, FileText, Menu, Loader2 } from 'lucide-react';
-import { carouselSlides } from '@/data/constants';
-import VideoModal from '@/components/home/VideoModal';
-import HeroSection from '@/components/home/HeroSection';
-import ServicesSection from '@/components/home/ServicesSection';
 
 interface HeaderProps {
   activeSection: string;
