@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { FaSync, FaTrash, FaTiktok } from "react-icons/fa";
+import { FaSync, FaTrash, FaTiktok, FaMoneyBillWave } from "react-icons/fa";
 import { toast } from "sonner";
 import { disconnectTikTok, refreshTikTokData } from "@/lib/tiktok.actions";
-import { InfluencerPlatform } from "@prisma/client";
+import { getRateCardsByInfluencerPlatform } from "@/lib/rateCard.actions";
+import { formatCurrency } from "@/lib/utils";
+import { InfluencerPlatform, RateCard, Service } from "@prisma/client";
 
 interface TikTokDataProps {
   connections: (InfluencerPlatform & {
@@ -16,11 +18,17 @@ interface TikTokDataProps {
   })[];
 }
 
+interface RateCardWithService extends RateCard {
+  service: Service;
+}
+
 export default function TikTokData({ connections: initialConnections }: TikTokDataProps) {
   const [connections, setConnections] = useState(initialConnections);
   const [isRefreshing, setIsRefreshing] = useState<Record<string, boolean>>({});
   const [isDisconnecting, setIsDisconnecting] = useState<Record<string, boolean>>({});
   const [lastAutoRefresh, setLastAutoRefresh] = useState<Date | null>(null);
+  const [rateCards, setRateCards] = useState<Record<string, RateCardWithService[]>>({});
+  const [showRateCards, setShowRateCards] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const autoRefreshInterval = setInterval(async () => {
@@ -122,6 +130,26 @@ export default function TikTokData({ connections: initialConnections }: TikTokDa
     }
   };
 
+  const loadRateCards = async (connectionId: string) => {
+    try {
+      const result = await getRateCardsByInfluencerPlatform(connectionId);
+      if (result.success && result.data) {
+        setRateCards(prev => ({ ...prev, [connectionId]: result.data as RateCardWithService[] }));
+      }
+    } catch (error) {
+      console.error("Failed to load rate cards:", error);
+    }
+  };
+
+  const toggleRateCards = async (connectionId: string) => {
+    const isCurrentlyShown = showRateCards[connectionId];
+    setShowRateCards(prev => ({ ...prev, [connectionId]: !isCurrentlyShown }));
+    
+    if (!isCurrentlyShown && !rateCards[connectionId]) {
+      await loadRateCards(connectionId);
+    }
+  };
+
   if (connections.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
@@ -134,6 +162,49 @@ export default function TikTokData({ connections: initialConnections }: TikTokDa
 
   return (
     <div className="space-y-6">
+      {/* Platform Action Buttons - Moved to top */}
+      <div className="flex flex-wrap gap-2">
+        {connections.map((connection) => (
+          <div key={connection.id} className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => toggleRateCards(connection.id)}
+            >
+              <FaMoneyBillWave className="w-4 h-4 mr-2" />
+              {showRateCards[connection.id] ? 'Hide' : 'Show'} Rate Cards
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={isRefreshing[connection.id]}
+              onClick={() => handleManualRefresh(connection.id)}
+            >
+              {isRefreshing[connection.id] ? (
+                <FaSync className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <FaSync className="w-4 h-4 mr-2" />
+              )}
+              Refresh
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={isDisconnecting[connection.id]}
+              onClick={() => handleDisconnect(connection.id)}
+            >
+              {isDisconnecting[connection.id] ? (
+                <FaTrash className="w-4 h-4 mr-2 animate-pulse" />
+              ) : (
+                <FaTrash className="w-4 h-4 mr-2" />
+              )}
+              Disconnect
+            </Button>
+          </div>
+        ))}
+      </div>
+
+      {/* Auto-refresh status bar */}
       <div className="flex items-center justify-between text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg">
         <span>Auto-refresh: Active (every 5 minutes)</span>
         {lastAutoRefresh && (
@@ -146,53 +217,23 @@ export default function TikTokData({ connections: initialConnections }: TikTokDa
 
         return (
           <div key={connection.id} className="border rounded-lg p-4">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                {platformData?.avatarUrl ? (
-                  <img
-                    src={platformData.avatarUrl}
-                    alt="Avatar"
-                    className="h-12 w-12 rounded-full object-cover border"
-                  />
-                ) : (
-                  <div className="h-12 w-12 bg-black rounded-full flex items-center justify-center">
-                    <FaTiktok className="h-6 w-6 text-white" />
-                  </div>
-                )}
-                <div>
-                  <h3 className="text-lg font-medium">@{connection.username}</h3>
-                  <p className="text-sm text-gray-500">
-                    Last synced: {connection.lastSynced ? new Date(connection.lastSynced).toLocaleString() : 'Never'}
-                  </p>
+            <div className="flex items-center gap-3 mb-4">
+              {platformData?.avatarUrl ? (
+                <img
+                  src={platformData.avatarUrl}
+                  alt="Avatar"
+                  className="h-12 w-12 rounded-full object-cover border"
+                />
+              ) : (
+                <div className="h-12 w-12 bg-black rounded-full flex items-center justify-center">
+                  <FaTiktok className="h-6 w-6 text-white" />
                 </div>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={isRefreshing[connection.id]}
-                  onClick={() => handleManualRefresh(connection.id)}
-                >
-                  {isRefreshing[connection.id] ? (
-                    <FaSync className="w-4 h-4 animate-spin mr-2" />
-                  ) : (
-                    <FaSync className="w-4 h-4 mr-2" />
-                  )}
-                  Refresh
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  disabled={isDisconnecting[connection.id]}
-                  onClick={() => handleDisconnect(connection.id)}
-                >
-                  {isDisconnecting[connection.id] ? (
-                    <FaTrash className="w-4 h-4 mr-2 animate-pulse" />
-                  ) : (
-                    <FaTrash className="w-4 h-4 mr-2" />
-                  )}
-                  Disconnect
-                </Button>
+              )}
+              <div>
+                <h3 className="text-lg font-medium">@{connection.username}</h3>
+                <p className="text-sm text-gray-500">
+                  Last synced: {connection.lastSynced ? new Date(connection.lastSynced).toLocaleString() : 'Never'}
+                </p>
               </div>
             </div>
 
@@ -240,6 +281,70 @@ export default function TikTokData({ connections: initialConnections }: TikTokDa
                     <p className="text-xl font-semibold">
                       {connection.engagementRate?.toFixed(2)}%
                     </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Rate Cards Section */}
+            {showRateCards[connection.id] && (
+              <div className="mt-6 border-t pt-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <FaMoneyBillWave className="text-green-600" />
+                  <h4 className="text-lg font-semibold text-gray-900">Rate Cards</h4>
+                  <span className="text-sm text-gray-500">
+                    (Harga dalam IDR)
+                  </span>
+                </div>
+                
+                {rateCards[connection.id] && rateCards[connection.id].length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {rateCards[connection.id].map((rateCard) => (
+                      <div
+                        key={rateCard.id}
+                        className="border rounded-lg p-4 bg-gradient-to-br from-green-50 to-blue-50 hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <h5 className="font-semibold text-gray-900">
+                            {rateCard.service.name}
+                          </h5>
+                          {rateCard.autoGenerated && (
+                            <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">
+                              Auto
+                            </span>
+                          )}
+                        </div>
+                        
+                        <p className="text-2xl font-bold text-green-600 mb-2">
+                          {formatCurrency(rateCard.price)}
+                        </p>
+                        
+                        {rateCard.service.description && (
+                          <p className="text-sm text-gray-600 mb-2">
+                            {rateCard.service.description}
+                          </p>
+                        )}
+                        
+                        {rateCard.description && (
+                          <p className="text-xs text-gray-500 italic">
+                            {rateCard.description}
+                          </p>
+                        )}
+                        
+                        <div className="flex items-center justify-between mt-3 text-xs text-gray-500">
+                          <span>Type: {rateCard.service.type}</span>
+                          <span>
+                            Updated: {new Date(rateCard.updatedAt).toLocaleDateString('id-ID')}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <FaMoneyBillWave className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                    <p>Belum ada rate card tersedia</p>
+                    <p className="text-sm mt-1">Rate card akan dibuat otomatis saat koneksi TikTok berhasil</p>
                   </div>
                 )}
               </div>

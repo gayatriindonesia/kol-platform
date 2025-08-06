@@ -59,10 +59,83 @@ async function main() {
     });
   }
 
+  // Create services for all platforms
+  const allPlatforms = await prisma.platform.findMany();
+  
+  for (const platform of allPlatforms) {
+    let services: Array<{name: string, description: string, type: string}> = [];
+    
+    switch (platform.name) {
+      case 'TikTok':
+        services = [
+          { name: 'Post Video', description: 'Video post promosi produk atau layanan', type: 'video' },
+          { name: 'Story', description: 'Story promosi 24 jam', type: 'story' },
+          { name: 'Live Streaming', description: 'Live streaming dengan mention produk', type: 'live' },
+          { name: 'Brand Integration', description: 'Integrasi brand dalam konten kreatif', type: 'integration' },
+          { name: 'Challenge Creation', description: 'Membuat challenge branded', type: 'challenge' }
+        ];
+        break;
+      case 'Instagram':
+        services = [
+          { name: 'Feed Post', description: 'Post foto/video di feed dengan caption promosi', type: 'post' },
+          { name: 'Story', description: 'Story promosi 24 jam', type: 'story' },
+          { name: 'Reels', description: 'Video pendek kreatif dengan produk', type: 'reels' },
+          { name: 'IGTV', description: 'Video panjang di IGTV', type: 'igtv' },
+          { name: 'Live Streaming', description: 'Live streaming dengan mention produk', type: 'live' }
+        ];
+        break;
+      case 'YouTube':
+        services = [
+          { name: 'Dedicated Video', description: 'Video khusus review/unboxing produk', type: 'video' },
+          { name: 'Product Integration', description: 'Integrasi produk dalam video reguler', type: 'integration' },
+          { name: 'Shorts', description: 'YouTube Shorts promosi produk', type: 'shorts' },
+          { name: 'Live Streaming', description: 'Live streaming dengan mention produk', type: 'live' },
+          { name: 'Community Post', description: 'Post di tab community dengan produk', type: 'community' }
+        ];
+        break;
+      case 'Facebook':
+        services = [
+          { name: 'Post', description: 'Post promosi di timeline Facebook', type: 'post' },
+          { name: 'Story', description: 'Facebook Story promosi 24 jam', type: 'story' },
+          { name: 'Video', description: 'Video promosi di Facebook', type: 'video' },
+          { name: 'Live Streaming', description: 'Facebook Live dengan mention produk', type: 'live' },
+          { name: 'Event Promotion', description: 'Promosi event atau acara brand', type: 'event' }
+        ];
+        break;
+      case 'Twitter':
+        services = [
+          { name: 'Tweet', description: 'Tweet promosi produk atau layanan', type: 'tweet' },
+          { name: 'Thread', description: 'Twitter thread review produk', type: 'thread' },
+          { name: 'Spaces', description: 'Twitter Spaces dengan mention produk', type: 'spaces' },
+          { name: 'Retweet Campaign', description: 'Campaign retweet dengan mention', type: 'retweet' },
+          { name: 'Hashtag Campaign', description: 'Campaign dengan hashtag khusus', type: 'hashtag' }
+        ];
+        break;
+    }
+
+    for (const service of services) {
+      await prisma.service.upsert({
+        where: { 
+          platformId_name: { 
+            platformId: platform.id, 
+            name: service.name 
+          } 
+        },
+        update: {},
+        create: {
+          ...service,
+          platformId: platform.id,
+          isActive: true
+        }
+      });
+    }
+  }
+
   console.log("✅ Seed completed:");
   console.log("  - Admin user: admin@example.com / admin123");
   console.log("  - Platforms: TikTok, Instagram, YouTube, Facebook, Twitter");
   console.log("  - Categories: 10 default categories created");
+  console.log("  - Services: Created for all platforms (TikTok, Instagram, YouTube, Facebook, Twitter)");
 }
 
 main()

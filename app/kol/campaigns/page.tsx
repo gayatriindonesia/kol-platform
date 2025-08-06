@@ -34,7 +34,7 @@ const CampaignPage = async () => {
     return <div className="text-red-600">Gagal memuat undangan: {res.error}</div>;
   }
   
-  // Fix the type mapping to convert null to undefined
+  // Fix the type mapping to convert null to undefined and include campaign data
   const invitations = res.data.map((item) => ({
     id: item.id,
     campaignId: item.campaignId,
@@ -47,6 +47,20 @@ const CampaignPage = async () => {
     updatedAt: item.updatedAt,
     invitedAt: item.invitedAt,
     respondedAt: item.respondedAt ?? undefined,
+    campaign: item.campaign ? {
+      id: item.campaign.id,
+      name: item.campaign.name,
+      startDate: item.campaign.startDate.toISOString(),
+      endDate: item.campaign.endDate.toISOString(),
+      type: item.campaign.type,
+    } : undefined,
+    brand: item.brand ? {
+      name: item.brand.name,
+      user: {
+        name: item.brand.user.name ?? '',
+        email: item.brand.user.email ?? '',
+      }
+    } : undefined,
   }));
   
   return (

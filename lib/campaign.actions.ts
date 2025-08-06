@@ -25,8 +25,24 @@ type RespondToCampaignInvitationInput = {
   message?: string
 }
 
+type CampaignInvitationWithRelations = Prisma.CampaignInvitationGetPayload<{
+  include: {
+    campaign: true; // or use select if you want specific fields
+    brand: {
+      include: {
+        user: {
+          select: {
+            name: true;
+            email: true;
+          }
+        }
+      }
+    }
+  }
+}>;
+
 type GetInfluencerInvitationsResult =
-  | { success: true; data: CampaignInvitation[] }
+  | { success: true; data: CampaignInvitationWithRelations[] }
   | { success: false; error: string }
 
 export const createCampaign = async (data: CampaignFormData) => {
@@ -667,8 +683,8 @@ export async function respondToCampaignInvitation({
       await createNotification({
         userId: invitation.brand.userId,
         type: 'INVITATION',
-        title: `Campaign Invitation ${response}`,
-        message: `Your campaign invitation has been ${response.toLowerCase()}`,
+        title: `Undangan Campaign ${response}`,
+        message: `Respon dari Influencer untuk Campaign anda ${response.toLowerCase()}`,
         data: {
           campaignId: invitation.campaignId,
           invitationId,
@@ -718,7 +734,7 @@ export async function debugInvitation(invitationId: string) {
 
 export async function getInfluencerInvitations(
   influencerId: string,
-  status?: CampaignStatus // Buat status menjadi optional
+  status?: CampaignStatus
 ): Promise<GetInfluencerInvitationsResult> {
   try {
     if (!influencerId) {
@@ -732,7 +748,6 @@ export async function getInfluencerInvitations(
       influencerId,
     };
 
-    // Hanya tambahkan filter status jika status diberikan
     if (status) {
       whereClause.status = status;
     }
@@ -740,7 +755,7 @@ export async function getInfluencerInvitations(
     const invitations = await db.campaignInvitation.findMany({
       where: whereClause,
       include: {
-        campaign: true,
+        campaign: true, // Include semua field campaign
         brand: {
           include: {
             user: {

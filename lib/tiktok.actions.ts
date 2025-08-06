@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { OAuthState } from "@prisma/client";
 import * as crypto from 'crypto';
+import { createRateCardIfNeeded } from "./rateCard.actions";
 
 // TikTok API configuration
 const TIKTOK_CLIENT_KEY = process.env.TIKTOK_CLIENT_KEY!;
@@ -248,22 +249,15 @@ export async function handleTikTokCallback(code: string, state: string) {
 
   try {
     console.log('=== TikTok Callback Debug Started ===');
-    
-    // Retrieve stored state and code verifier
-    const storedState: OAuthState | null = await db.oAuthState.findUnique({
-      where: { state },
-    });
 
+    const storedState: OAuthState | null = await db.oAuthState.findUnique({ where: { state } });
     if (!storedState || storedState.userId !== session.user.id) {
       return { success: false, error: 'Invalid state' };
     }
 
-    // Exchange code for access token
     const tokenResponse = await fetch(TIKTOK_TOKEN_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         client_key: TIKTOK_CLIENT_KEY,
         client_secret: TIKTOK_CLIENT_SECRET,
@@ -276,29 +270,18 @@ export async function handleTikTokCallback(code: string, state: string) {
 
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
-      console.error('TikTok token error:', errorText);
       return { success: false, error: `Token exchange failed: ${errorText}` };
     }
 
     const tokenData = await safeJsonParse(tokenResponse);
     const { access_token, refresh_token, expires_in, open_id } = tokenData;
 
-    // Get user info with better error handling
     const userInfoFields = [
-      'open_id',
-      'union_id', 
-      'avatar_url',
-      'display_name',
-      'username',
-      'follower_count',
-      'following_count',
-      'video_count',
-      'bio',
-      'is_verified'
+      'open_id', 'union_id', 'avatar_url', 'display_name', 'username',
+      'follower_count', 'following_count', 'video_count', 'bio', 'is_verified'
     ];
-
     const userInfoUrl = `${TIKTOK_USER_INFO_URL}?fields=${userInfoFields.join(',')}`;
-    
+
     const userResponse = await fetch(userInfoUrl, {
       headers: {
         'Authorization': `Bearer ${access_token}`,
@@ -308,119 +291,47 @@ export async function handleTikTokCallback(code: string, state: string) {
 
     if (!userResponse.ok) {
       const errorText = await userResponse.text();
-      console.error('TikTok user info error:', errorText);
       return { success: false, error: `Failed to fetch user data: ${errorText}` };
     }
 
     const userData = await safeJsonParse(userResponse);
-    console.log('TikTok user data (raw):', JSON.stringify(userData, null, 2));
-
-    // Verify structure data
     if (!userData.data || !userData.data.user) {
-      console.error('TikTok API unexpected response structure:', userData);
       return { success: false, error: 'Unexpected API response structure' };
     }
 
     const userInfo = userData.data.user;
-    console.log('TikTok userInfo object:', JSON.stringify(userInfo, null, 2));
-
-    // Initialize engagement metrics
-    let totalLikes = 0;
-    let totalComments = 0;
-    let totalShares = 0;
-    let totalSaves = 0;
-    let totalViews = 0;
-    let engagementRate = 0;
-
-    // Fetch videos with improved error handling
-    console.log('🎬 Fetching videos...');
+    let totalLikes = 0, totalComments = 0, totalShares = 0, totalSaves = 0, totalViews = 0, engagementRate = 0;
     const videoResult = await fetchTikTokVideos(access_token);
-    
-    // Fixed: Better handling of video result
-    if (videoResult.success && videoResult.data && videoResult.data.data) {
-      const videoData = videoResult.data.data;
-      
-      // Handle different response structures
-      const videos = videoData.videos || [];
-      
-      console.log('📈 Processing videos:', videos.length);
-      
-      if (videos.length > 0) {
-        videos.forEach((video: any, index: number) => {
-          console.log(`Video ${index + 1}:`, {
-            id: video.id,
-            likes: video.like_count,
-            comments: video.comment_count,
-            shares: video.share_count,
-            saves: video.save_count,
-            views: video.view_count
-          });
-          
-          totalLikes += video.like_count || 0;
-          totalComments += video.comment_count || 0;
-          totalShares += video.share_count || 0;
-          totalSaves += video.save_count || 0;
-          totalViews += video.view_count || 0;
-        });
 
-        // Calculate engagement rate
-        const totalFollowers = userInfo.follower_count || 1;
-        const totalPosts = Math.max(videos.length, 1);
-        const totalEngagement = totalLikes + totalComments + totalShares + totalSaves;
-        engagementRate = totalPosts > 0 ? (totalEngagement / (totalFollowers * totalPosts)) * 100 : 0;
-
-        console.log('📊 Engagement Calculation:', {
-          totalLikes,
-          totalComments,
-          totalShares,
-          totalSaves,
-          totalViews,
-          totalEngagement,
-          totalFollowers,
-          totalPosts,
-          engagementRate
-        });
-      }
+    if (videoResult.success && videoResult.data?.data?.videos) {
+      const videos = videoResult.data.data.videos;
+      videos.forEach((video: any) => {
+        totalLikes += video.like_count || 0;
+        totalComments += video.comment_count || 0;
+        totalShares += video.share_count || 0;
+        totalSaves += video.save_count || 0;
+        totalViews += video.view_count || 0;
+      });
+      const totalFollowers = userInfo.follower_count || 1;
+      const totalPosts = Math.max(videos.length, 1);
+      const totalEngagement = totalLikes + totalComments + totalShares + totalSaves;
+      engagementRate = (totalEngagement / (totalFollowers * totalPosts)) * 100;
     } else {
-      console.warn('⚠️ Video data not available or API error:', videoResult.error);
-      
-      // Fallback: calculate engagement rate based on estimation
-      const estimatedEngagementRate = calculateEstimatedEngagementRate(userInfo);
-      engagementRate = estimatedEngagementRate;
-      
-      console.log('📊 Using estimated engagement rate:', engagementRate);
+      engagementRate = calculateEstimatedEngagementRate(userInfo);
     }
 
-    // Verify required fields
     const requiredFields = ['username', 'follower_count', 'avatar_url', 'display_name'];
-    const missingFields = requiredFields.filter(field => 
-      userInfo[field] === undefined || userInfo[field] === null
-    );
-
+    const missingFields = requiredFields.filter(f => !userInfo[f]);
     if (missingFields.length > 0) {
-      console.error('Missing required fields in TikTok response:', missingFields);
       return { success: false, error: `Missing required fields: ${missingFields.join(', ')}` };
     }
 
-    // Get TikTok platform ID
-    const tiktokPlatform = await db.platform.findFirst({
-      where: { name: 'TikTok' },
-    });
+    const tiktokPlatform = await db.platform.findFirst({ where: { name: 'TikTok' } });
+    if (!tiktokPlatform) return { success: false, error: 'TikTok platform not found' };
 
-    if (!tiktokPlatform) {
-      return { success: false, error: 'TikTok platform not found' };
-    }
+    const influencer = await db.influencer.findUnique({ where: { userId: session.user.id } });
+    if (!influencer) return { success: false, error: 'Influencer not found' };
 
-    // Get influencer
-    const influencer = await db.influencer.findUnique({
-      where: { userId: session.user.id },
-    });
-
-    if (!influencer) {
-      return { success: false, error: 'Influencer not found' };
-    }
-
-    // Check if connection already exists
     const existingConnection = await db.influencerPlatform.findFirst({
       where: {
         influencerId: influencer.id,
@@ -428,7 +339,6 @@ export async function handleTikTokCallback(code: string, state: string) {
       },
     });
 
-    // Platform data to store
     const platformData = {
       bio: userInfo.bio || '',
       avatarUrl: userInfo.avatar_url || '',
@@ -440,7 +350,6 @@ export async function handleTikTokCallback(code: string, state: string) {
     const expiresAt = new Date();
     expiresAt.setSeconds(expiresAt.getSeconds() + expires_in);
 
-    // Common data for both create and update
     const commonData = {
       username: userInfo.username || '',
       followers: userInfo.follower_count || 0,
@@ -450,30 +359,21 @@ export async function handleTikTokCallback(code: string, state: string) {
       tokenExpiresAt: expiresAt,
       lastSynced: new Date(),
       platformData,
-      // Add engagement metrics with proper null handling
       likesCount: totalLikes,
       commentsCount: totalComments,
       sharesCount: totalShares,
       savesCount: totalSaves,
-      engagementRate: Math.round(engagementRate * 100) / 100, // Round to 2 decimal places
+      engagementRate: Math.round(engagementRate * 100) / 100,
     };
 
-    console.log('💾 Data to save:', JSON.stringify(commonData, null, 2));
-
+    let influencerPlatformId: string;
     if (existingConnection) {
-      // Update existing connection
-      console.log('🔄 Updating existing connection:', existingConnection.id);
-      
       const updateResult = await db.influencerPlatform.update({
         where: { id: existingConnection.id },
         data: commonData,
       });
-      
-      console.log('✅ Update result:', updateResult);
+      influencerPlatformId = existingConnection.id;
     } else {
-      // Create new connection
-      console.log('➕ Creating new connection');
-      
       const createResult = await db.influencerPlatform.create({
         data: {
           influencerId: influencer.id,
@@ -482,24 +382,18 @@ export async function handleTikTokCallback(code: string, state: string) {
           ...commonData,
         },
       });
-      
-      console.log('✅ Create result:', createResult);
+      influencerPlatformId = createResult.id;
     }
 
-    // Clean up the OAuth state record
-    await db.oAuthState.delete({
-      where: { state },
-    });
+    await createRateCardIfNeeded(influencerPlatformId, engagementRate);
 
-    console.log('✅ TikTok connection saved successfully');
+    await db.oAuthState.delete({ where: { state } });
     return { success: true };
   } catch (error) {
     console.error('TikTok callback error:', error);
     return { success: false, error: error instanceof Error ? error.message : 'Internal server error' };
   }
 }
-
-
 
 // Disconnect TikTok
 export async function disconnectTikTok(connectionId: string) {

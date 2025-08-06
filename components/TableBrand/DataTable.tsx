@@ -35,7 +35,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
-import { Loader2, Plus, Search, SlidersHorizontal } from "lucide-react"
+import { Loader2, Plus, Search, SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react"
 import { createBrand, deleteBrand, updateBrand } from "@/lib/brand.actions"
 import { Label } from "@/components/ui/label"
 import { useEffect } from "react"
@@ -56,6 +56,7 @@ export function DataTable<TData, TValue>({
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [rowsPerPage, setRowsPerPage] = React.useState(10)
+  const [searchValue, setSearchValue] = React.useState("")
   const [isSearchFocused, setIsSearchFocused] = React.useState(false)
   const [isLoading, setIsLoading] = React.useState(false)
 
@@ -164,96 +165,123 @@ export function DataTable<TData, TValue>({
   }, [])
 
   return (
-    <div className="space-y-4">
-      <Toaster position="top-right" richColors />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 p-4 sm:p-6">
+      <div className="mx-auto max-w-7xl space-y-6">
+        <Toaster position="top-right" richColors />
       
-      {/* Create Brand Form dalam Card */}
-      <Card className="w-full max-w-[350px]">
-        <CardHeader>
-          <CardTitle>Buat Brand</CardTitle>
-          <CardDescription>Tambahkan Brand Untuk Mengikuti Campaign</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleCreateBrand}>
-            <div className="grid w-full items-center gap-4">
-              <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="name">Brand Name</Label>
-                <Input
-                  id="name"
-                  placeholder="Enter brand name"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-          </form>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button 
-            variant="outline" 
-            onClick={() => setEditName("")}
-          >
-            Reset
-          </Button>
-          <Button 
-            onClick={handleCreateBrand}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Plus className="mr-2 h-4 w-4" />
-            )}
-            Tambah Brand
-          </Button>
-        </CardFooter>
-      </Card>
+        {/* Header Section */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent">
+            Brand Management
+          </h1>
+          <p className="text-slate-600 mt-2">Manage your brands and campaigns efficiently</p>
+        </div>
 
-      {/* Search and Filters */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
-        <div className={`relative transition-all duration-200 ${isSearchFocused ? 'w-full sm:w-80' : 'w-full sm:w-64'}`}>
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Search brands..."
-            value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn("name")?.setFilterValue(event.target.value)
-            }
-            className="pl-9 pr-4 py-2 h-10 w-full"
-            onFocus={() => setIsSearchFocused(true)}
-            onBlur={() => setIsSearchFocused(false)}
-          />
+        {/* Create Brand Form */}
+        <Card className="w-full max-w-md backdrop-blur-sm bg-white/80 shadow-xl border-0 ring-1 ring-slate-200/50">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-xl font-semibold text-slate-900">Create New Brand</CardTitle>
+            <CardDescription className="text-slate-600">Add a new brand to join campaigns</CardDescription>
+          </CardHeader>
+          <CardContent className="pb-4">
+            <form onSubmit={handleCreateBrand}>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-sm font-medium text-slate-700">Brand Name</Label>
+                  <Input
+                    id="name"
+                    placeholder="Enter brand name"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                    required
+                  />
+                </div>
+              </div>
+            </form>
+          </CardContent>
+          <CardFooter className="flex justify-between pt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setEditName("")}
+              className="border-slate-200 text-slate-600 hover:bg-slate-50"
+            >
+              Reset
+            </Button>
+            <Button 
+              onClick={handleCreateBrand}
+              disabled={isLoading}
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 transform-gpu disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            >
+              {isLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Plus className="mr-2 h-4 w-4" />
+              )}
+              Add Brand
+            </Button>
+          </CardFooter>
+        </Card>
+
+        {/* Search and Filters */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between p-6 bg-white/60 backdrop-blur-sm rounded-xl border border-slate-200/50 shadow-sm">
+          <div className={`relative transition-all duration-300 ${isSearchFocused ? 'w-full sm:w-96' : 'w-full sm:w-80'}`}>
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Input
+              placeholder="Search brands..."
+              value={searchValue}
+              onChange={(event) => {
+                const value = event.target.value
+                setSearchValue(value)
+                table.getColumn("name")?.setFilterValue(value)
+              }}
+              className="pl-10 pr-10 h-11 w-full border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 bg-white/80 transition-all duration-200"
+              onFocus={() => setIsSearchFocused(true)}
+              onBlur={() => setIsSearchFocused(false)}
+            />
+            {searchValue && (
+              <button
+                onClick={() => {
+                  setSearchValue("")
+                  table.getColumn("name")?.setFilterValue("")
+                }}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors duration-200 p-1 rounded-full hover:bg-slate-100"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9 gap-2 border-slate-200 text-slate-600 hover:bg-slate-50">
+                  <SlidersHorizontal className="h-4 w-4" />
+                  <span className="hidden sm:inline">Columns</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48 bg-white/95 backdrop-blur-sm border-slate-200">
+                {table
+                  .getAllColumns()
+                  .filter((column) => column.getCanHide())
+                  .map((column) => (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      className="capitalize"
+                      checked={column.getIsVisible()}
+                      onCheckedChange={(value) =>
+                        column.toggleVisibility(!!value)
+                      }
+                    >
+                      {column.id}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
-        
-        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 gap-1">
-                <SlidersHorizontal className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">View</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[180px]">
-              {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
 
       {/* Table */}
       <div className="rounded-md border bg-white shadow-sm">
@@ -308,9 +336,11 @@ export function DataTable<TData, TValue>({
           {/* Mobile View */}
           <div className="md:hidden">
             {table.getRowModel().rows?.length ? (
-              <div className="divide-y">
-                {table.getRowModel().rows.map((row) => (
-                  <div key={row.id} className="p-4 space-y-3">
+              <div className="divide-y divide-slate-200">
+                {table.getRowModel().rows.map((row, index) => (
+                  <div key={row.id} className={`p-6 space-y-4 transition-all duration-200 hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-indigo-50/30 hover:shadow-sm ${
+                    index % 2 === 0 ? 'bg-white/60' : 'bg-slate-50/30'
+                  }`}>
                     {row.getVisibleCells().map((cell) => {
                       const header = table
                         .getHeaderGroups()
@@ -318,11 +348,11 @@ export function DataTable<TData, TValue>({
                         .find(header => header.id === cell.column.id);
                         
                       return (
-                        <div key={cell.id} className="grid grid-cols-2 gap-1">
-                          <div className="font-medium text-gray-500">
+                        <div key={cell.id} className="flex justify-between items-center py-2">
+                          <div className="font-medium text-slate-600 text-sm">
                             {header ? flexRender(header.column.columnDef.header, header.getContext()) : cell.column.id}
                           </div>
-                          <div>{flexRender(cell.column.columnDef.cell, cell.getContext())}</div>
+                          <div className="text-slate-800 font-medium">{flexRender(cell.column.columnDef.cell, cell.getContext())}</div>
                         </div>
                       );
                     })}
@@ -330,13 +360,13 @@ export function DataTable<TData, TValue>({
                 ))}
               </div>
             ) : (
-              <div className="p-8 text-center">
-                <div className="flex flex-col items-center justify-center text-gray-500">
-                  <div className="rounded-full bg-gray-100 p-3 mb-2">
-                    <Search className="h-6 w-6" />
+              <div className="p-12 text-center">
+                <div className="flex flex-col items-center justify-center text-slate-500">
+                  <div className="rounded-full bg-gradient-to-br from-slate-100 to-blue-100 p-4 mb-4">
+                    <Search className="h-8 w-8 text-slate-400" />
                   </div>
-                  <p>No brands found</p>
-                  <p className="text-sm">Try changing your search or create a new brand</p>
+                  <p className="text-lg font-medium mb-1">No brands found</p>
+                  <p className="text-sm text-slate-400">Try changing your search or create a new brand</p>
                 </div>
               </div>
             )}
@@ -344,7 +374,7 @@ export function DataTable<TData, TValue>({
         </div>
         
         {/* Pagination */}
-        <div className="flex flex-col sm:flex-row items-center justify-between border-t p-4 gap-4">
+        <div className="flex flex-col sm:flex-row items-center justify-between border-t border-slate-200 bg-gradient-to-r from-slate-50/50 to-blue-50/30 p-6 gap-4">
           <div className="text-sm text-gray-500 order-2 sm:order-1">
             {table.getFilteredRowModel().rows.length} 
             {table.getFilteredRowModel().rows.length === 1 ? ' brand' : ' brands'} found
@@ -404,95 +434,90 @@ export function DataTable<TData, TValue>({
                 className="h-8 w-8 p-0"
               >
                 <span className="sr-only">Next</span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-4 w-4"
-                >
-                  <path d="m9 18 6-6-6-6" />
-                </svg>
+                <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
           </div>
         </div>
-      </div>
+        </div>
 
-      {/* Edit Brand Modal */}
-      <Dialog 
-        open={showEditModal} 
-        onOpenChange={(open) => {
-          setShowEditModal(open)
-          if (!open) setEditName("")
-        }}
-      >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-xl">Edit Brand</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleUpdateBrand}>
-            <div className="space-y-4 py-2">
-              <div className="space-y-2">
-                <Label htmlFor="edit-name">Name</Label>
-                <Input
-                  id="edit-name"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  placeholder="Enter brand name"
-                  required
-                />
+        {/* Edit Brand Modal */}
+        <Dialog 
+          open={showEditModal} 
+          onOpenChange={(open) => {
+            setShowEditModal(open)
+            if (!open) setEditName("")
+          }}
+        >
+          <DialogContent className="sm:max-w-md bg-white/95 backdrop-blur-sm border-0 ring-1 ring-slate-200">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-semibold text-slate-900">Edit Brand</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleUpdateBrand}>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-name" className="text-sm font-medium text-slate-700">Brand Name</Label>
+                  <Input
+                    id="edit-name"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    placeholder="Enter brand name"
+                    className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                    required
+                  />
+                </div>
               </div>
-            </div>
-            <DialogFooter className="mt-4 flex flex-col sm:flex-row gap-2">
-              <Button 
-                type="button" 
-                variant="outline"
-                onClick={() => setShowEditModal(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Changes
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+              <DialogFooter className="mt-6 flex flex-col sm:flex-row gap-3">
+                <Button 
+                  type="button" 
+                  variant="outline"
+                  onClick={() => setShowEditModal(false)}
+                  className="border-slate-200 text-slate-600 hover:bg-slate-50"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={isLoading}
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
+                >
+                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Save Changes
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
 
-      {/* Delete Confirmation */}
-      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Delete</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete <Badge variant="outline" className="ml-1 font-semibold">{selectedBrand?.name}</Badge>? 
-              This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="mt-4 flex flex-col sm:flex-row gap-2">
-            <AlertDialogCancel asChild>
-              <Button variant="outline">Cancel</Button>
-            </AlertDialogCancel>
-            <AlertDialogAction asChild>
-              <Button 
-                variant="destructive" 
-                onClick={handleDeleteBrand}
-                disabled={isLoading}
-              >
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Delete
-              </Button>
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        {/* Delete Confirmation */}
+        <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+          <AlertDialogContent className="bg-white/95 backdrop-blur-sm border-0 ring-1 ring-slate-200">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-xl font-semibold text-slate-900">Confirm Delete</AlertDialogTitle>
+              <AlertDialogDescription className="text-slate-600">
+                Are you sure you want to delete <Badge variant="outline" className="ml-1 font-semibold border-red-200 text-red-700">{selectedBrand?.name}</Badge>? 
+                This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="mt-6 flex flex-col sm:flex-row gap-3">
+              <AlertDialogCancel asChild>
+                <Button variant="outline" className="border-slate-200 text-slate-600 hover:bg-slate-50">Cancel</Button>
+              </AlertDialogCancel>
+              <AlertDialogAction asChild>
+                <Button 
+                  variant="destructive" 
+                  onClick={handleDeleteBrand}
+                  disabled={isLoading}
+                  className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 shadow-lg"
+                >
+                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Delete Brand
+                </Button>
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </div>
   )
 }

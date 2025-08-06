@@ -4,10 +4,23 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import useCampaignAppStore, { SelectedInfluencer } from "@/storeCampaign";
 import { getAllInfluencer } from "@/lib/influencer.actions";
-import { BadgeCheck, User, Users, Tag } from "lucide-react";
-import { FaInstagram, FaYoutube, FaTiktok, FaTwitter, FaFacebook } from "react-icons/fa";
+import { getRateCardsByInfluencerPlatform } from "@/lib/rateCard.actions";
+import { formatCurrency } from "@/lib/utils";
+import { BadgeCheck, User, Users, Tag, DollarSign } from "lucide-react";
+import { FaInstagram, FaYoutube, FaTiktok, FaTwitter, FaFacebook, FaMoneyBillWave } from "react-icons/fa";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { RateCard, Service } from "@prisma/client";
 
+interface RateCardWithService extends RateCard {
+  service: Service;
+  influencerPlatform: {
+    id: string;
+    platform: {
+      id: string;
+      name: string;
+    };
+  };
+}
 
 const SelfServiceSetup = () => {
   const { data: session } = useSession();
@@ -16,11 +29,15 @@ const SelfServiceSetup = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedInfluencers, setSelectedInfluencers] = useState<string[]>([]);
-
+  const [rateCards, setRateCards] = useState<Record<string, RateCardWithService[]>>({});
+  const [showRateCards, setShowRateCards] = useState<Record<string, boolean>>({});
+  
   // State untuk fitur pencarian dan filter
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+
+  const [loadingRateCards, setLoadingRateCards] = useState<Record<string, boolean>>({});
 
   // Daftar platform yang tersedia untuk filter
   const platformOptions = [
@@ -122,12 +139,11 @@ const SelfServiceSetup = () => {
         })) || [],
       }));
 
-
     setSelfServiceCampaignData({
-      selectedInfluencers: selectedData, // ✅ Simpan langsung ke state
+      selectedInfluencers: selectedData,
       formData: {
         selfService: {
-          selectedInfluencers: selectedData, // ✅ Juga isi untuk formData jika diperlukan
+          selectedInfluencers: selectedData,
         },
       },
     } as any);
@@ -139,7 +155,7 @@ const SelfServiceSetup = () => {
         ? prev.filter((id) => id !== influencerId)
         : [...prev, influencerId];
 
-      console.log("🟢 selectedInfluencer IDs:", newValue); // Log ID yang dipilih user
+      console.log("🟢 selectedInfluencer IDs:", newValue);
       return newValue;
     });
   };
@@ -155,7 +171,6 @@ const SelfServiceSetup = () => {
   };
 
   const getAvatarUrl = (influencer: any) => {
-    // Prioritas 1: Cek session auth untuk current user
     const currentUserEmail = session?.user?.email;
     const isCurrentUser = influencer.user?.email === currentUserEmail;
 
@@ -163,26 +178,194 @@ const SelfServiceSetup = () => {
       return session.user.image;
     }
 
-    // Prioritas 2: Avatar dari user data influencer
     if (influencer.user?.image) {
       return influencer.user.image;
     }
 
-    // Prioritas 3: Avatar dari platform data
     const platformWithAvatar = influencer.platforms?.find((p: any) => p.avatarUrl);
     if (platformWithAvatar?.avatarUrl) {
       return platformWithAvatar.avatarUrl;
     }
 
-    // Default placeholder
     return "https://ui-avatars.com/api/?name=User&background=e5e7eb&color=6b7280&size=100";
   };
-
-
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const target = e.target as HTMLImageElement;
     target.src = "https://ui-avatars.com/api/?name=User&background=e5e7eb&color=6b7280&size=100";
+  };
+
+  // Fixed: Improved rate cards loading function with better error handling and logging
+  const loadRateCards = async (platformId: string) => {
+  console.log("🔍 Loading rate cards for platform:", platformId);
+  
+  // Validasi platformId
+  if (!platformId || platformId.trim() === '') {
+    console.error('❌ Invalid platform ID:', platformId);
+    setRateCards(prev => ({ ...prev, [platformId]: [] }));
+    return;
+  }
+  
+  setLoadingRateCards(prev => ({ ...prev, [platformId]: true }));
+  
+  try {
+    const result = await getRateCardsByInfluencerPlatform(platformId);
+    
+    console.log("📋 API Response for platform", platformId, ":", result);
+    console.log("📋 Response type:", typeof result);
+    console.log("📋 Response keys:", result ? Object.keys(result) : 'null/undefined');
+    
+    // Cek jika result ada dan memiliki struktur yang benar
+    if (result && typeof result === 'object') {
+      console.log("📋 result.success:", result.success);
+      console.log("📋 result.data:", result.data);
+      console.log("📋 result.data type:", typeof result.data);
+      console.log("📋 result.data is array:", Array.isArray(result.data));
+      
+      if (result.success === true) {
+        if (Array.isArray(result.data)) {
+          console.log("✅ Valid array data with", result.data.length, "items");
+          
+          // Validasi setiap item dalam array
+          result.data.forEach((item, index) => {
+            console.log(`Item ${index}:`, {
+              hasId: !!item.id,
+              hasPrice: item.price !== null && item.price !== undefined,
+              price: item.price,
+              priceType: typeof item.price,
+              hasService: !!item.service,
+              serviceName: item.service?.name
+            });
+          });
+          
+          setRateCards(prev => ({ 
+            ...prev, 
+            [platformId]: result.data as RateCardWithService[] 
+          }));
+        } else {
+          console.warn("⚠️ result.data is not an array:", result.data);
+          setRateCards(prev => ({ ...prev, [platformId]: [] }));
+        }
+      } else {
+        console.warn("⚠️ API returned success: false:", result);
+        setRateCards(prev => ({ ...prev, [platformId]: [] }));
+      }
+    } else {
+      console.error("❌ Invalid API response:", result);
+      setRateCards(prev => ({ ...prev, [platformId]: [] }));
+    }
+    
+  } catch (error) {
+    console.error("❌ Exception in loadRateCards:", error);
+    setRateCards(prev => ({ ...prev, [platformId]: [] }));
+  } finally {
+    setLoadingRateCards(prev => ({ ...prev, [platformId]: false }));
+    console.log("🏁 Finished loading for platform:", platformId);
+  }
+};
+
+const toggleRateCards = async (connectionId: string) => {
+  const isCurrentlyShown = showRateCards[connectionId];
+  setShowRateCards(prev => ({ ...prev, [connectionId]: !isCurrentlyShown }));
+
+  if (!isCurrentlyShown) {
+    // Always load when showing, or you can cache if needed
+    await loadRateCards(connectionId);
+  }
+};
+
+  // Fixed: Improved RateCardDisplay component with better loading and error states
+  const RateCardDisplay = ({ platformId, compact = false }: { platformId: string; compact?: boolean }) => {
+  const shouldShow = showRateCards[platformId] === true;
+  const isLoading = loadingRateCards[platformId] === true;
+  const platformRateCards = rateCards[platformId];
+
+  // Logging yang lebih detail
+  console.log(`🎯 RateCardDisplay render for ${platformId}:`, {
+    shouldShow,
+    isLoading,
+    platformRateCards,
+    platformRateCardsType: typeof platformRateCards,
+    isArray: Array.isArray(platformRateCards),
+    length: platformRateCards?.length,
+    hasData: !!platformRateCards,
+    entireRateCardsState: rateCards
+  });
+
+  if (!shouldShow) {
+    return null;
+  }
+
+    return (
+      <div className={`mt-4 border-t pt-4 ${compact ? 'space-y-2' : 'space-y-3'}`}>
+        <div className="flex items-center gap-2 mb-3">
+          <FaMoneyBillWave className="text-green-600" />
+          <h4 className={`font-semibold text-gray-900 ${compact ? 'text-sm' : 'text-base'}`}>
+            Rate Cards
+          </h4>
+          <span className={`text-gray-500 ${compact ? 'text-xs' : 'text-sm'}`}>
+            (Harga dalam IDR)
+          </span>
+          {isLoading && (
+            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-green-500"></div>
+          )}
+        </div>
+        
+        {isLoading ? (
+          <div className={`text-center text-gray-500 ${compact ? 'py-4' : 'py-6'}`}>
+            <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-green-500 mx-auto mb-2"></div>
+            <p className={compact ? 'text-xs' : 'text-sm'}>Loading rate cards...</p>
+          </div>
+        ) : platformRateCards && platformRateCards.length > 0 ? (
+          <div className={`grid ${compact ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'} gap-2`}>
+            {platformRateCards.map((rateCard) => (
+              <div
+                key={rateCard.id}
+                className={`border rounded-lg ${compact ? 'p-2' : 'p-3'} bg-gradient-to-br from-green-50 to-blue-50 hover:shadow-sm transition-shadow`}
+              >
+                <div className="flex items-start justify-between mb-1">
+                  <h5 className={`font-semibold text-gray-900 ${compact ? 'text-xs' : 'text-sm'}`}>
+                    {rateCard.service.name}
+                  </h5>
+                  {rateCard.autoGenerated && (
+                    <span className="text-xs bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full">
+                      Auto
+                    </span>
+                  )}
+                </div>
+                
+                <p className={`font-bold text-green-600 mb-1 ${compact ? 'text-sm' : 'text-lg'}`}>
+                  {formatCurrency(rateCard.price)}
+                </p>
+                
+                {!compact && rateCard.service.description && (
+                  <p className="text-xs text-gray-600 mb-1">
+                    {rateCard.service.description}
+                  </p>
+                )}
+                
+                <div className={`flex items-center justify-between text-xs text-gray-500 ${compact ? 'mt-1' : 'mt-2'}`}>
+                  <span>Type: {rateCard.service.type}</span>
+                  {!compact && (
+                    <span>
+                      Updated: {new Date(rateCard.updatedAt).toLocaleDateString('id-ID')}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className={`text-center text-gray-500 ${compact ? 'py-4' : 'py-6'}`}>
+            <FaMoneyBillWave className={`mx-auto text-gray-400 mb-2 ${compact ? 'h-4 w-4' : 'h-6 w-6'}`} />
+            <p className={compact ? 'text-xs' : 'text-sm'}>Belum ada rate card tersedia</p>
+            <p className={`mt-1 ${compact ? 'text-xs' : 'text-sm'}`}>
+              Rate card akan dibuat otomatis saat platform terhubung
+            </p>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -455,26 +638,39 @@ const SelfServiceSetup = () => {
                     <h4 className="text-sm font-semibold border-b pb-1">Social Media:</h4>
                     <div className="space-y-2">
                       {influencer.platforms?.map((p: any) => (
-                        <div
-                          key={p.id}
-                          className="flex flex-col md:flex-row md:items-center gap-2 text-sm bg-gray-50 p-2 rounded-md"
-                        >
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            {getPlatformIcon(p.name)}
-                            <span className="font-medium text-nowrap md:hidden">{p.name}</span>
-                          </div>
+                        <div key={p.id}>
+                          <div className="flex flex-col md:flex-row md:items-center gap-2 text-sm bg-gray-50 p-2 rounded-md">
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              {getPlatformIcon(p.name)}
+                              <span className="font-medium text-nowrap md:hidden">{p.name}</span>
+                            </div>
 
-                          <div className="flex-1 min-w-0">
-                            <span className="text-gray-600 text-xs truncate block" title={`@${p.username}`}>
-                              @{p.username}
-                            </span>
-                          </div>
+                            <div className="flex-1 min-w-0">
+                              <span className="text-gray-600 text-xs truncate block" title={`@${p.username}`}>
+                                @{p.username}
+                              </span>
+                            </div>
 
-                          <div className="md:ml-auto">
-                            <span className="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full whitespace-nowrap">
-                              {parseInt(p.followers).toLocaleString()} followers
-                            </span>
+                            <div className="md:ml-auto flex items-center gap-2">
+                              <span className="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full whitespace-nowrap">
+                                {parseInt(p.followers).toLocaleString()} followers
+                              </span>
+                              {/* Fixed: Show rate card button for all platforms, not just TikTok */}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleRateCards(p.id);
+                                }}
+                                className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full hover:bg-green-200 transition-colors flex items-center gap-1"
+                              >
+                                <DollarSign className="h-3 w-3" />
+                                {showRateCards[p.id] ? 'Hide' : 'Rates'}
+                              </button>
+                            </div>
                           </div>
+                          
+                          {/* Rate Cards Display - Show for all platforms */}
+                          <RateCardDisplay platformId={p.id} compact={true} />
                         </div>
                       ))}
                       {(!influencer.platforms || influencer.platforms.length === 0) && (
@@ -536,32 +732,44 @@ const SelfServiceSetup = () => {
 
                         <div>
                           <h4 className="text-sm font-medium mb-1">Platform:</h4>
-                          <ul className="space-y-2">
+                          <ul className="space-y-3">
                             {influencer.platforms?.map((p: any) => (
-                              <li
-                                key={p.id}
-                                className="bg-gray-50 p-3 rounded-md text-sm flex flex-col sm:flex-row sm:justify-between sm:items-center"
-                              >
-                                <div className="flex items-center gap-2 mb-2 sm:mb-0">
-                                  {getPlatformIcon(p.name)}
-                                  <span className="font-medium">{p.name}</span>
-                                  <span className="text-xs text-gray-500">@{p.username}</span>
+                              <li key={p.id} className="bg-gray-50 p-3 rounded-md text-sm">
+                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2">
+                                  <div className="flex items-center gap-2 mb-2 sm:mb-0">
+                                    {getPlatformIcon(p.name)}
+                                    <span className="font-medium">{p.name}</span>
+                                    <span className="text-xs text-gray-500">@{p.username}</span>
+                                  </div>
+                                  <div className="flex flex-wrap gap-2 text-xs text-gray-600">
+                                    <span className="bg-white border px-2 py-0.5 rounded-full">
+                                      {parseInt(p.followers).toLocaleString()} followers
+                                    </span>
+                                    <span className="bg-white border px-2 py-0.5 rounded-full">
+                                      {p.posts ?? 0} posts
+                                    </span>
+                                    <span className="bg-white border px-2 py-0.5 rounded-full">
+                                      ER: {(p.engagementRate ?? 0).toFixed(2)}%
+                                    </span>
+                                    {/* Fixed: Show rate card button for all platforms in modal too */}
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleRateCards(p.id);
+                                      }}
+                                      className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full hover:bg-green-200 transition-colors flex items-center gap-1"
+                                    >
+                                      <FaMoneyBillWave className="h-3 w-3" />
+                                      {showRateCards[p.id] ? 'Hide Rate Cards' : 'Show Rate Cards'}
+                                    </button>
+                                  </div>
                                 </div>
-                                <div className="flex flex-wrap gap-2 text-xs text-gray-600">
-                                  <span className="bg-white border px-2 py-0.5 rounded-full">
-                                    {parseInt(p.followers).toLocaleString()} followers
-                                  </span>
-                                  <span className="bg-white border px-2 py-0.5 rounded-full">
-                                    {p.posts ?? 0} posts
-                                  </span>
-                                  <span className="bg-white border px-2 py-0.5 rounded-full">
-                                    ER: {(p.engagementRate ?? 0).toFixed(2)}%
-                                  </span>
-                                </div>
+                                
+                                {/* Rate Cards Display for all platforms in Modal */}
+                                <RateCardDisplay platformId={p.id} compact={false} />
                               </li>
                             ))}
                           </ul>
-
                         </div>
                       </div>
                     </DialogContent>
