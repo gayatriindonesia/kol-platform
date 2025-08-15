@@ -131,12 +131,102 @@ async function main() {
     }
   }
 
+  // Create payment methods
+  const bankTransfer = await prisma.paymentMethod.upsert({
+    where: { code: 'BANK_TRANSFER' },
+    update: {},
+    create: {
+      name: 'Bank Transfer',
+      code: 'BANK_TRANSFER',
+      description: 'Transfer funds directly to bank account',
+      isActive: true,
+    },
+  });
+
+  const eWallet = await prisma.paymentMethod.upsert({
+    where: { code: 'E_WALLET' },
+    update: {},
+    create: {
+      name: 'E-Wallet',
+      code: 'E_WALLET',
+      description: 'Pay using digital wallet services',
+      isActive: true,
+    },
+  });
+
+  const creditCard = await prisma.paymentMethod.upsert({
+    where: { code: 'CREDIT_CARD' },
+    update: {},
+    create: {
+      name: 'Credit Card',
+      code: 'CREDIT_CARD',
+      description: 'Pay using credit card',
+      isActive: true,
+    },
+  });
+
+  // Create banks for Bank Transfer
+  const bankData = [
+    { name: 'Bank Central Asia (BCA)', accountNumber: '1234567890', accountName: 'PT Influence Media' },
+    { name: 'Bank Mandiri', accountNumber: '0987654321', accountName: 'PT Influence Media' },
+    { name: 'Bank Negara Indonesia (BNI)', accountNumber: '1122334455', accountName: 'PT Influence Media' },
+    { name: 'Bank Rakyat Indonesia (BRI)', accountNumber: '5544332211', accountName: 'PT Influence Media' },
+    { name: 'Bank Permata', accountNumber: '6677889900', accountName: 'PT Influence Media' },
+  ];
+
+  for (const bank of bankData) {
+    await prisma.bank.upsert({
+      where: { 
+        paymentMethodId_name: {
+          paymentMethodId: bankTransfer.id,
+          name: bank.name
+        }
+      },
+      update: {},
+      create: {
+        ...bank,
+        paymentMethodId: bankTransfer.id,
+        isActive: true,
+      },
+    });
+  }
+
+  // Create e-wallet options
+  const eWalletData = [
+    { name: 'GoPay', accountNumber: 'gopay@influencemedia.id', accountName: 'Influence Media' },
+    { name: 'OVO', accountNumber: 'ovo@influencemedia.id', accountName: 'Influence Media' },
+    { name: 'DANA', accountNumber: 'dana@influencemedia.id', accountName: 'Influence Media' },
+    { name: 'ShopeePay', accountNumber: 'shopeepay@influencemedia.id', accountName: 'Influence Media' },
+  ];
+
+  for (const wallet of eWalletData) {
+    await prisma.bank.upsert({
+      where: { 
+        paymentMethodId_name: {
+          paymentMethodId: eWallet.id,
+          name: wallet.name
+        }
+      },
+      update: {},
+      create: {
+        ...wallet,
+        paymentMethodId: eWallet.id,
+        isActive: true,
+      },
+    });
+  }
+
+  console.log('✅ Payment methods seeded successfully');
+}
+
+
   console.log("✅ Seed completed:");
   console.log("  - Admin user: admin@example.com / admin123");
   console.log("  - Platforms: TikTok, Instagram, YouTube, Facebook, Twitter");
   console.log("  - Categories: 10 default categories created");
   console.log("  - Services: Created for all platforms (TikTok, Instagram, YouTube, Facebook, Twitter)");
-}
+  console.log("  - Bank: Create to payment");
+
 
 main()
   .catch((e) => {

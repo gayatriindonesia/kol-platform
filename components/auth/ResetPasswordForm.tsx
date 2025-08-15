@@ -78,7 +78,7 @@ const ResetPasswordForm = ({
 
             {/* Submit */}
             <Button type="submit" className="w-full" disabled={isPending}>
-              Kirim Reset Password
+              Reset Password Sekarang
             </Button>
           </div>
         </form>

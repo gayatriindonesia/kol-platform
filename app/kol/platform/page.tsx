@@ -7,13 +7,13 @@ import { getAllCategories, getInfluencerWithCategories } from '@/lib/category.ac
 import { disconnectFacebook, syncFacebookData } from '@/lib/facebook.actions';
 import { FaTiktok, FaYoutube, FaInstagram, FaFacebook } from 'react-icons/fa';
 
-import ConnectTikTokButton from '@/components/kol/ConnectTikTokButton';
 import InstagramConnectButton from '@/components/kol/InstagramConnectButton';
 import FacebookConnectButton from '@/components/kol/FacebookConnectButton';
 import TikTokData from '@/components/kol/TikTokData';
 import CategoryManager from '@/components/kol/CategoryManager';
 import { YouTubeConnectionButton } from '@/components/kol/YoutubeConnectionButton';
 import YouTubeData from '@/components/kol/YouTubeData';
+import { getCurrentInfluencer } from '@/lib/influencer.actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,16 +21,7 @@ const InfluencerPlatformPage = async () => {
   const session = await auth();
   if (!session?.user) redirect('/signin');
 
-  const influencer = await db.influencer.findUnique({
-    where: { userId: session.user.id },
-    include: {
-      platforms: {
-        include: { platform: true }
-      }
-    }
-  });
-
-  if (!influencer) redirect("/kol");
+  const influencer = await getCurrentInfluencer();
 
   const [tiktokConnections, categoriesResult, influencerWithCategories] = await Promise.all([
     getTikTokConnections(),
@@ -162,12 +153,6 @@ const InfluencerPlatformPage = async () => {
                     <h3 className="text-lg font-semibold text-white">Hubungkan Akun TikTok</h3>
                     <p className="text-pink-100 text-sm">Platform video pendek</p>
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {tiktokConnection && (
-                    <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-                  )}
-                  {!tiktokConnection && <ConnectTikTokButton />}
                 </div>
               </div>
             </div>

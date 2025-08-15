@@ -18,6 +18,7 @@ export interface NavigationItem {
   name: string
   path?: string
   icon: IconType
+  badge?: string | number
   children?: NavigationItem[]
 }
 
@@ -106,12 +107,12 @@ export const brandNavigationItems: NavigationItem[] = [
     icon: MdCampaign,
     children: [
       {
-        name: 'All Campaigns',
+        name: 'Table Campaigns',
         path: '/brand/campaigns',
         icon: MdList,
       },
       {
-        name: 'Create Campaign',
+        name: 'Buat Campaign',
         path: '/brand/new-campaigns',
         icon: MdAdd,
       },
@@ -123,7 +124,7 @@ export const brandNavigationItems: NavigationItem[] = [
     icon: MdReport,
   },
   {
-    name: 'Settings',
+    name: 'Pengaturan',
     path: '/brand/settings',
     icon: MdSettings,
   },

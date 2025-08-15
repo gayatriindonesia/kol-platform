@@ -6,30 +6,31 @@ import { Activity, ArrowLeft, Award, BarChart3, Calendar, Camera, DollarSign, Ey
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { FaInstagram } from 'react-icons/fa';
+import { useRouter } from 'next/navigation';
 
 // Update interface berdasarkan struktur data yang sebenarnya
 interface Influencer {
-    id: string;
-    name: string | null;
-    email: string | null;
-    password: string | null;
-    emailVerified: Date | null;
-    image: string | null;
-    role: string | null;
+  id: string;
+  name: string | null;
+  email: string | null;
+  emailVerified: Date | null;
+  image: string | null;
+  role: string | null;
 }
 
 // Definisikan tipe response dari API
 interface ApiResponse {
-    data?: {
-        user: Influencer;
-        categories: any[];
-    };
-    error?: string;
-    status: number;
+  data?: {
+    user: Influencer;
+    categories: any[];
+  };
+  error?: string;
+  status: number;
 }
 
 interface Props {
-    id: string;
+  id: string;
 }
 
 const influencerData = {
@@ -46,7 +47,7 @@ const influencerData = {
   isVerified: true,
   rating: 4.8,
   totalReviews: 127,
-  
+
   // Social Media Stats
   socialMedia: {
     instagram: {
@@ -70,7 +71,7 @@ const influencerData = {
       engagement: 12.3
     }
   },
-  
+
   // Performance Metrics
   metrics: {
     reachRate: 92,
@@ -79,7 +80,7 @@ const influencerData = {
     completionRate: 98,
     onTimeDelivery: 96
   },
-  
+
   // Recent Campaigns
   recentCampaigns: [
     {
@@ -92,7 +93,7 @@ const influencerData = {
       completedAt: "2024-06-15"
     },
     {
-      id: "camp_002", 
+      id: "camp_002",
       brand: "Sephora",
       campaign: "Beauty Week Special",
       status: "Completed",
@@ -110,7 +111,7 @@ const influencerData = {
       completedAt: null
     }
   ],
-  
+
   // Pricing
   pricing: {
     instagramPost: 15000000,
@@ -119,21 +120,21 @@ const influencerData = {
     tiktokVideo: 12000000,
     packageDeal: 45000000
   },
-  
+
   // Contact Info
   contact: {
     email: "sarah.michelle@email.com",
     phone: "+62 812-3456-7890",
-    manager: "Alex Thompson",
-    agency: "Creative Collective ID"
+    manager: "Tidak ada",
+    agency: "Tidak Ada"
   },
-  
+
   // Specialties
   specialties: ["Fashion", "Beauty", "Lifestyle", "Travel", "Food & Beverage"],
-  
+
   // Languages
   languages: ["Bahasa Indonesia", "English", "Mandarin"],
-  
+
   // Audience Demographics
   audienceDemographics: {
     ageGroups: [
@@ -157,14 +158,17 @@ const influencerData = {
 };
 
 export default function InfluencerDetailClient({ id }: Props) {
-    const [influencer, setInfluencer] = useState<Influencer | null>(null);
-    const [error, setError] = useState<string | null>(null);
-    const [loading, setLoading] = useState<boolean>(true);
+  const [influencer, setInfluencer] = useState<Influencer | null>(null);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
-    const [activeTab, setActiveTab] = useState('overview');
-    const [isFollowing, setIsFollowing] = useState(false);
+  const router = useRouter();
 
-    const formatNumber = (num: number): string => {
+  const [activeTab, setActiveTab] = useState('overview');
+  const [isFollowing, setIsFollowing] = useState(false);
+
+  const formatNumber = (num: number): string => {
     if (num >= 1000000) {
       return (num / 1000000).toFixed(1) + 'M';
     } else if (num >= 1000) {
@@ -216,87 +220,92 @@ export default function InfluencerDetailClient({ id }: Props) {
   };
 
 
-    // Fetch influencer data
-    useEffect(() => {
-        const fetchInfluencer = async () => {
-            try {
-                setLoading(true);
-                setError(null);
+  // Fetch influencer data
+  useEffect(() => {
+    const fetchInfluencer = async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-                const response: ApiResponse = await getInfluencerById(id);
+        const response: ApiResponse = await getInfluencerById(id);
+        console.log("detail page:", response)
 
-                // Handle response berdasarkan struktur yang benar
-                if (response.error) {
-                    setError(response.error);
-                    return;
-                }
-
-                if (!response.data || !response.data.user) {
-                    setError('Influencer tidak ditemukan');
-                    return;
-                }
-
-                setInfluencer(response.data.user);
-
-            } catch (err) {
-                console.error('Error fetching influencer:', err);
-                setError(err instanceof Error ? err.message : 'Terjadi kesalahan saat mengambil data');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        if (id) {
-            fetchInfluencer();
+        // Handle response berdasarkan struktur yang benar
+        if (response.error) {
+          setError(response.error);
+          return;
         }
-    }, [id]);
 
-    // Loading state
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-                <Card className="p-8 text-center">
-                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
-                    <p className="text-gray-600">Memuat data influencer...</p>
-                </Card>
-            </div>
-        );
+        if (!response.data || !response.data.user) {
+          setError('Influencer tidak ditemukan');
+          return;
+        }
+
+        setInfluencer(response.data.user);
+        setCategories(response.data.categories || [])
+
+      } catch (err) {
+        console.error('Error fetching influencer:', err);
+        setError(err instanceof Error ? err.message : 'Terjadi kesalahan saat mengambil data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchInfluencer();
     }
+  }, [id]);
 
-    // Error state
-    if (error) {
-        return (
-            <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-                <Card className="p-8 text-center">
-                    <p className="text-red-600 mb-4">Error: {error}</p>
-                    <button
-                        onClick={() => window.location.reload()}
-                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                    >
-                        Coba Lagi
-                    </button>
-                </Card>
-            </div>
-        );
-    }
-
-    // Success state
-    if (!influencer) {
-        return (
-            <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-                <Card className="p-8 text-center">
-                    <p className="text-gray-600">Data influencer tidak tersedia</p>
-                </Card>
-            </div>
-        );
-    }
-
+  // Loading state
+  if (loading) {
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <Card className="p-8 text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-gray-600">Memuat data influencer...</p>
+        </Card>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <Card className="p-8 text-center">
+          <p className="text-red-600 mb-4">Error: {error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Coba Lagi
+          </button>
+        </Card>
+      </div>
+    );
+  }
+
+  // variable influencer this is table user
+  console.log("detail data influencer:", influencer)
+
+  // Success state
+  if (!influencer) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <Card className="p-8 text-center">
+          <p className="text-gray-600">Data influencer tidak tersedia</p>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Back Button */}
         <div className="mb-6">
-          <Button variant="outline" size="sm" className="mb-4">
+          <Button variant="outline" size="sm" className="mb-4" onClick={() => router.back()}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Kembali ke Daftar Influencer
           </Button>
@@ -304,96 +313,98 @@ export default function InfluencerDetailClient({ id }: Props) {
 
         {/* Header Profile */}
         <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm mb-8 overflow-hidden">
-  {/* Hero Background */}
-  <div 
-    className="h-48 bg-gradient-to-r from-pink-400 via-purple-500 to-indigo-600 relative"
-    style={{ 
-      backgroundImage: `url(${influencer.image})`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center'
-    }}
-  >
-    <div className="absolute inset-0 bg-black/20" />
-  </div>
-
-  <CardContent className="relative">
-    <div className="flex flex-col lg:flex-row gap-6 -mt-16 relative z-10">
-      
-      {/* Avatar */}
-      <div className="flex-shrink-0">
-        <img
-          src={influencer.image || influencerData.avatar}
-          alt={influencer.name || influencerData.name}
-          className="w-32 h-32 rounded-full border-4 border-white shadow-xl object-cover"
-        />
-      </div>
-
-      {/* Detail */}
-      <div className="flex-1 pt-16 lg:pt-4">
-        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-          
-          {/* Left Info */}
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <span className="bg-white text-gray-900 text-2xl font-semibold px-4 py-1 rounded shadow-sm">
-                {influencer.name}
-              </span>
-
-              {influencerData.isVerified && (
-                <Badge className="bg-blue-100 text-blue-800 border-blue-200">
-                  <Award className="w-3 h-3 mr-1" />
-                  Verified
-                </Badge>
-              )}
-            </div>
-
-            <div className="flex items-center gap-6 text-sm text-gray-600 mb-4">
-              <div className="flex items-center gap-1">
-                <MapPin className="w-4 h-4" />
-                <span>{influencerData.location}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Calendar className="w-4 h-4" />
-                <span>Bergabung {formatDate(influencerData.joinDate)}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Star className="w-4 h-4 text-yellow-500" />
-                <span>{influencerData.rating}/5 ({influencerData.totalReviews} reviews)</span>
-              </div>
-            </div>
-
-            <Badge className={`${getTierColor(influencerData.tier)} mb-4`}>
-              <TrendingUp className="w-3 h-3 mr-1" />
-              {influencerData.tier}
-            </Badge>
-
-            <p className="text-gray-700 max-w-2xl">{influencerData.bio}</p>
+          {/* Hero Background */}
+          <div
+            className="h-48 bg-gradient-to-r from-pink-400 via-purple-500 to-indigo-600 relative"
+            style={{
+              backgroundImage: `url(${influencer.image})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
+            }}
+          >
+            <div className="absolute inset-0 bg-black/20" />
           </div>
 
-          {/* Right Actions */}
-          <div className="flex gap-3">
-            <Button 
-              onClick={() => setIsFollowing(!isFollowing)}
-              className={isFollowing ? "bg-gray-200 text-gray-800 hover:bg-gray-300" : "bg-blue-600 hover:bg-blue-700"}
-            >
-              {isFollowing ? 'Following' : 'Follow'}
-            </Button>
+          <CardContent className="relative">
+            <div className="flex flex-col lg:flex-row gap-6 -mt-16 relative z-10">
 
-            <Button variant="outline">
-              <Mail className="w-4 h-4 mr-2" />
-              Contact
-            </Button>
+              {/* Avatar */}
+              <div className="flex-shrink-0">
+                <img
+                  src={influencer.image || influencerData.avatar}
+                  alt={influencer.name || influencerData.name}
+                  className="w-32 h-32 rounded-full border-4 border-white shadow-xl object-cover"
+                />
+              </div>
 
-            <Button variant="outline">
-              <Share2 className="w-4 h-4 mr-2" />
-              Share
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </CardContent>
-</Card>
+              {/* Detail */}
+              <div className="flex-1 pt-16 lg:pt-4">
+                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+
+                  {/* Left Info */}
+                  <div>
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="bg-white text-gray-900 text-2xl font-semibold px-4 py-1 rounded shadow-sm">
+                        {influencer.name}
+                      </span>
+
+                      {influencerData.isVerified && (
+                        <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                          <Award className="w-3 h-3 mr-1" />
+                          Verified
+                        </Badge>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-6 text-sm text-gray-600 mb-4">
+                      <div className="flex items-center gap-1">
+                        <MapPin className="w-4 h-4" />
+                        <span>{influencerData.location}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-4 h-4" />
+                        <span>
+                          Bergabung {influencer.emailVerified ? formatDate(influencer.emailVerified.toString()) : 'Belum Bergabung'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Star className="w-4 h-4 text-yellow-500" />
+                        <span>{influencerData.rating}/5 ({influencerData.totalReviews} reviews)</span>
+                      </div>
+                    </div>
+
+                    <Badge className={`${getTierColor(influencerData.tier)} mb-4`}>
+                      <TrendingUp className="w-3 h-3 mr-1" />
+                      {influencerData.tier}
+                    </Badge>
+
+                    <p className="text-gray-700 max-w-2xl">{influencerData.bio}</p>
+                  </div>
+
+                  {/* Right Actions */}
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={() => setIsFollowing(!isFollowing)}
+                      className={isFollowing ? "bg-gray-200 text-gray-800 hover:bg-gray-300" : "bg-blue-600 hover:bg-blue-700"}
+                    >
+                      {isFollowing ? 'Following' : 'Follow'}
+                    </Button>
+
+                    <Button variant="outline">
+                      <Mail className="w-4 h-4 mr-2" />
+                      Contact
+                    </Button>
+
+                    <Button variant="outline">
+                      <Share2 className="w-4 h-4 mr-2" />
+                      Share
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
 
         {/* Stats Overview */}
@@ -404,9 +415,9 @@ export default function InfluencerDetailClient({ id }: Props) {
                 <div>
                   <p className="text-pink-100">Total Followers</p>
                   <p className="text-3xl font-bold">
-                    {formatNumber(influencerData.socialMedia.instagram.followers + 
-                                influencerData.socialMedia.youtube.subscribers + 
-                                influencerData.socialMedia.tiktok.followers)}
+                    {formatNumber(influencerData.socialMedia.instagram.followers +
+                      influencerData.socialMedia.youtube.subscribers +
+                      influencerData.socialMedia.tiktok.followers)}
                   </p>
                 </div>
                 <Users className="w-12 h-12 text-pink-200" />
@@ -457,7 +468,7 @@ export default function InfluencerDetailClient({ id }: Props) {
             <div className="flex flex-wrap gap-2">
               {[
                 { id: 'overview', label: 'Overview', icon: User },
-                { id: 'social', label: 'Social Media', icon: Instagram },
+                { id: 'social', label: 'Social Media', icon: FaInstagram },
                 { id: 'campaigns', label: 'Campaigns', icon: BarChart3 },
                 { id: 'pricing', label: 'Pricing', icon: DollarSign },
                 { id: 'audience', label: 'Audience', icon: Users }
@@ -507,14 +518,14 @@ export default function InfluencerDetailClient({ id }: Props) {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Award className="w-5 h-5" />
-                    Specialties
+                    Categories
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
-                    {influencerData.specialties.map((specialty, index) => (
+                    {categories.map((cat, index) => (
                       <Badge key={index} variant="outline" className="px-3 py-1">
-                        {specialty}
+                        {cat.category.name}
                       </Badge>
                     ))}
                   </div>
@@ -534,7 +545,7 @@ export default function InfluencerDetailClient({ id }: Props) {
                 <CardContent className="space-y-4">
                   <div>
                     <p className="text-sm text-gray-600">Email</p>
-                    <p className="font-medium">{influencerData.contact.email}</p>
+                    <p className="font-medium">{influencer.email}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Phone</p>
@@ -734,7 +745,7 @@ export default function InfluencerDetailClient({ id }: Props) {
               </div>
               <Alert className="mt-6 border-blue-200 bg-blue-50">
                 <AlertDescription className="text-blue-800">
-                  Harga dapat berubah tergantung pada kompleksitas campaign dan deliverables yang diminta. 
+                  Harga dapat berubah tergantung pada kompleksitas campaign dan deliverables yang diminta.
                   Hubungi langsung untuk mendapatkan penawaran khusus.
                 </AlertDescription>
               </Alert>
@@ -756,7 +767,7 @@ export default function InfluencerDetailClient({ id }: Props) {
                       <span className="font-medium">{group.range} years</span>
                       <div className="flex items-center gap-3 flex-1 mx-4">
                         <div className="flex-1 bg-gray-200 rounded-full h-2">
-                          <div 
+                          <div
                             className="bg-blue-500 h-2 rounded-full transition-all duration-500"
                             style={{ width: `${group.percentage}%` }}
                           ></div>
@@ -780,7 +791,7 @@ export default function InfluencerDetailClient({ id }: Props) {
                     <span className="font-medium">Female</span>
                     <div className="flex items-center gap-3 flex-1 mx-4">
                       <div className="flex-1 bg-gray-200 rounded-full h-2">
-                        <div 
+                        <div
                           className="bg-pink-500 h-2 rounded-full transition-all duration-500"
                           style={{ width: `${influencerData.audienceDemographics.gender.female}%` }}
                         ></div>
@@ -792,7 +803,7 @@ export default function InfluencerDetailClient({ id }: Props) {
                     <span className="font-medium">Male</span>
                     <div className="flex items-center gap-3 flex-1 mx-4">
                       <div className="flex-1 bg-gray-200 rounded-full h-2">
-                        <div 
+                        <div
                           className="bg-blue-500 h-2 rounded-full transition-all duration-500"
                           style={{ width: `${influencerData.audienceDemographics.gender.male}%` }}
                         ></div>
@@ -832,25 +843,21 @@ export default function InfluencerDetailClient({ id }: Props) {
         )}
 
         {/* Action Buttons - Fixed at bottom */}
-        <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm mt-8 sticky bottom-4">
+        <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm mt-8">
           <CardContent className="p-6">
             <div className="flex flex-wrap gap-4 justify-center lg:justify-end">
               <Button variant="outline" size="lg" className="flex items-center gap-2">
                 <Heart className="w-4 h-4" />
                 Add to Wishlist
               </Button>
-              <Button variant="outline" size="lg" className="flex items-center gap-2">
+              <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 flex items-center gap-2">
                 <MessageCircle className="w-4 h-4" />
                 Send Message
-              </Button>
-              <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 flex items-center gap-2">
-                <DollarSign className="w-4 h-4" />
-                Book Collaboration
               </Button>
             </div>
           </CardContent>
         </Card>
       </div>
     </div>
-    );
+  );
 }

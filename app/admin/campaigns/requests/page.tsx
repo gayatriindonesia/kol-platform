@@ -9,7 +9,6 @@ import {
   Eye,
   User,
   Calendar,
-  DollarSign,
   Users,
   RefreshCw,
 } from 'lucide-react'
@@ -46,13 +45,6 @@ export default function RequestCampaign() {
       setFetchLoading(false)
     }
   }
-
-  const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    }).format(amount)
 
   const formatDate = (dateStr: string) =>
     new Date(dateStr).toLocaleDateString('id-ID', {
@@ -178,16 +170,8 @@ export default function RequestCampaign() {
                   Tipe Campaign: {campaign.type}
                 </p>
                 <p className="flex items-center gap-2">
-                  <DollarSign className="w-4 h-4" />
-                  {formatCurrency(campaign.budget)}
-                </p>
-                <p className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
                   {formatDate(campaign.startDate)} - {formatDate(campaign.endDate)}
-                </p>
-                <p className="flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  {campaign.targetAudience || '-'}
                 </p>
               </div>
 

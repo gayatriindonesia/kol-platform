@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { db } from "./db";
+import { redirect } from "next/navigation";
 
 type UpdateInfluencerPayload = {
   userid?: string
@@ -152,7 +153,8 @@ export async function getInfluencerById(id: string) {
           include: {
             category: true
           }
-        }
+        },
+        platforms: true
       }
     });
 
@@ -309,4 +311,27 @@ export async function deleteInfluencer(id: string) {
     console.error("Error deleting influencer:", error);
     return { error: "Failed to delete influencer", status: 500 };
   }
+}
+
+// KOL Dashboard Platform
+export async function getCurrentInfluencer() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    redirect("/signin");
+  }
+
+  const influencer = await db.influencer.findUnique({
+    where: { userId: session.user.id },
+    include: {
+      platforms: {
+        include: { platform: true }
+      }
+    }
+  });
+
+  if (!influencer) {
+    redirect("/kol");
+  }
+
+  return influencer;
 }

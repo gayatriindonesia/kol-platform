@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { MdDateRange } from "react-icons/md";
 
 const CampaignDateSelector = () => {
   const { formData, updateFormData } = useCampaignAppStore();
@@ -93,8 +94,21 @@ const CampaignDateSelector = () => {
           <AlertDescription>{dateError}</AlertDescription>
         </Alert>
       )}
+      {/* Header Section */}
+      <div className="text-center space-y-4">
+        <div className="flex items-center justify-center space-x-3">
+          <div className="p-3 bg-gradient-to-br from-orange-100 to-red-100 rounded-full">
+            <MdDateRange className="h-8 w-8 text-orange-600" />
+          </div>
+          <div>
+            <h3 className="text-3xl font-bold text-gray-900">Durasi Campaign</h3>
+            <p className="text-gray-600 mt-1">Tentukan Tanggal Mulai Dan Berakhir</p>
+          </div>
+        </div>
+      </div>
 
       <div className="grid gap-6 md:grid-cols-2">
+        
         {/* Start Date Picker */}
         <div className="space-y-2">
           <Label htmlFor="startDate" className="text-sm font-medium">

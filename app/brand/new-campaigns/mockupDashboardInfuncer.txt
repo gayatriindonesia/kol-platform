@@ -1,4 +1,6 @@
 'use client';
+
+// untuk dasboard KOL ajuan campaign
 import React, { useState, useTransition } from 'react';
 import {
   Calendar,
@@ -9,6 +11,7 @@ import {
   CheckCircle2,
   XCircle,
   Eye,
+  Filter,
   Search,
   Sparkles,
   ArrowRight,
@@ -16,9 +19,6 @@ import {
   TrendingUp,
   Award
 } from 'lucide-react';
-import { respondToCampaignInvitation } from '@/lib/campaign.actions';
-import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
 
 type InvitationStatus = 'PENDING' | 'ACTIVE' | 'REJECTED' | 'COMPLETED' | 'CANCELLED';
 
@@ -30,12 +30,12 @@ interface Brand {
 interface Campaign {
   id: string;
   name: string;
+  description?: string;
   budget?: number;
   startDate: string;
   endDate: string;
   type: string;
   brand?: Brand;
-  goal?: string;
 }
 
 interface Invitation {
@@ -52,24 +52,89 @@ interface Invitation {
   respondedAt?: Date;
   campaign?: Campaign;
   brand?: Brand;
-  goal?: string;
 }
 
-type Props = {
-  initialInvitations: Invitation[];
-  influencerId: string;
-};
+const InfluencerDashboardInvitations = () => {
+  // Sample data for demonstration
+  const sampleInvitations: Invitation[] = [
+    {
+      id: '1',
+      campaignId: 'camp1',
+      influencerId: 'inf1',
+      brandId: 'brand1',
+      status: 'PENDING',
+      message: 'Kami tertarik untuk berkolaborasi dengan Anda dalam kampanye produk kecantikan terbaru kami. Campaign ini akan fokus pada skincare untuk millennial.',
+      createdAt: new Date('2024-01-15'),
+      invitedAt: new Date('2024-01-15'),
+      campaign: {
+        id: 'camp1',
+        name: 'Summer Skincare Collection 2024',
+        description: 'Kampanye untuk memperkenalkan koleksi skincare musim panas dengan fokus pada perlindungan UV dan hidrasi kulit.',
+        budget: 15000000,
+        startDate: '2024-02-01',
+        endDate: '2024-02-28',
+        type: 'BEAUTY',
+        brand: {
+          name: 'GlowUp Beauty',
+          user: { name: 'Sarah Marketing', email: 'sarah@glowup.com' }
+        }
+      }
+    },
+    {
+      id: '2',
+      campaignId: 'camp2',
+      influencerId: 'inf1',
+      brandId: 'brand2',
+      status: 'ACTIVE',
+      message: 'Campaign teknologi untuk review gadget terbaru.',
+      responseMessage: 'Terima kasih atas kesempatannya! Saya sangat tertarik untuk berpartisipasi.',
+      createdAt: new Date('2024-01-10'),
+      invitedAt: new Date('2024-01-10'),
+      respondedAt: new Date('2024-01-12'),
+      campaign: {
+        id: 'camp2',
+        name: 'Tech Innovation Showcase',
+        description: 'Review dan showcase produk teknologi innovative untuk target audience tech-savvy.',
+        budget: 25000000,
+        startDate: '2024-01-20',
+        endDate: '2024-03-20',
+        type: 'TECHNOLOGY',
+        brand: {
+          name: 'TechVibe Indonesia',
+          user: { name: 'David Tech', email: 'david@techvibe.id' }
+        }
+      }
+    },
+    {
+      id: '3',
+      campaignId: 'camp3',
+      influencerId: 'inf1',
+      brandId: 'brand3',
+      status: 'REJECTED',
+      message: 'Kolaborasi untuk fashion brand sustainable.',
+      responseMessage: 'Maaf, schedule saya sudah penuh untuk periode tersebut.',
+      createdAt: new Date('2024-01-05'),
+      invitedAt: new Date('2024-01-05'),
+      respondedAt: new Date('2024-01-06'),
+      campaign: {
+        id: 'camp3',
+        name: 'Sustainable Fashion Movement',
+        budget: 12000000,
+        startDate: '2024-01-15',
+        endDate: '2024-02-15',
+        type: 'FASHION',
+        brand: {
+          name: 'EcoWear',
+          user: { name: 'Lisa Green', email: 'lisa@ecowear.id' }
+        }
+      }
+    }
+  ];
 
-const InfluencerDashboardInvitations = ({ initialInvitations, influencerId }: Props) => {
-  const [invitations, setInvitations] = useState<Invitation[]>(initialInvitations);
+  const [invitations, setInvitations] = useState<Invitation[]>(sampleInvitations);
   const [activeTab, setActiveTab] = useState<InvitationStatus | 'ALL'>('PENDING');
   const [isPending, startTransition] = useTransition();
   const [searchTerm, setSearchTerm] = useState('');
-  const router = useRouter();
-
-  // Debug log untuk memeriksa data
-  console.log('Initial invitations:', initialInvitations);
-  console.log('Current invitations:', invitations);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -152,8 +217,7 @@ const InfluencerDashboardInvitations = ({ initialInvitations, influencerId }: Pr
     responseMessage?: string
   ) => {
     const newStatus: InvitationStatus = response === 'ACCEPTED' ? 'ACTIVE' : 'REJECTED';
-    const previousInvitations = [...invitations];
-
+    
     setInvitations(prev =>
       prev.map(inv =>
         inv.id === invitationId
@@ -166,59 +230,13 @@ const InfluencerDashboardInvitations = ({ initialInvitations, influencerId }: Pr
           : inv
       )
     );
-
-    startTransition(async () => {
-      try {
-        const result = await respondToCampaignInvitation({
-          invitationId,
-          influencerId,
-          response,
-          message: responseMessage
-        });
-
-        if (result.success) {
-          toast.success(result.message || `Undangan berhasil ${response === 'ACCEPTED' ? 'diterima' : 'ditolak'}`);
-          router.refresh();
-        } else {
-          setInvitations(previousInvitations);
-          toast.error(result.error || 'Gagal memperbarui status undangan');
-        }
-      } catch (error) {
-        setInvitations(previousInvitations);
-        console.error('Error updating invitation:', error);
-        toast.error('Terjadi kesalahan saat memperbarui status undangan');
-      }
-    });
-  };
-
-  // Helper function untuk mendapatkan nama campaign
-  const getCampaignName = (invitation: Invitation): string => {
-    // Coba dari berbagai properti yang mungkin ada
-    if (invitation.campaign?.name) return invitation.campaign.name;
-    if (invitation.campaignId) return `Campaign ID: ${invitation.campaignId}`;
-    return 'Campaign Tidak Diketahui';
-  };
-  const getCampaignGoal = (invitation: Invitation): string => {
-    // Coba dari berbagai properti yang mungkin ada
-    if (invitation.campaign?.goal) return invitation.campaign.goal;
-    if (invitation.campaignId) return `Campaign ID: ${invitation.campaignId}`;
-    return 'Campaign Tidak Diketahui';
-  };
-
-  // Helper function untuk mendapatkan nama brand
-  const getBrandName = (invitation: Invitation): string => {
-    // Coba dari berbagai properti yang mungkin ada
-    if (invitation.campaign?.brand?.name) return invitation.campaign.brand.name;
-    if (invitation.brand?.name) return invitation.brand.name;
-    if (invitation.brandId) return `Brand ID: ${invitation.brandId}`;
-    return 'Brand Tidak Diketahui';
   };
 
   const filteredInvitations = invitations.filter(invitation => {
     const matchesTab = activeTab === 'ALL' || invitation.status === activeTab;
     const matchesSearch = searchTerm === '' || 
-      getCampaignName(invitation).toLowerCase().includes(searchTerm.toLowerCase()) ||
-      getBrandName(invitation).toLowerCase().includes(searchTerm.toLowerCase());
+      invitation.campaign?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      invitation.campaign?.brand?.name?.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesTab && matchesSearch;
   });
 
@@ -239,7 +257,7 @@ const InfluencerDashboardInvitations = ({ initialInvitations, influencerId }: Pr
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Header Section */}
-      <div className="bg-white/80 backdrop-blur-lg border-b border-white/20">
+      <div className="bg-white/80 backdrop-blur-lg border-b border-white/20 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
@@ -266,23 +284,6 @@ const InfluencerDashboardInvitations = ({ initialInvitations, influencerId }: Pr
               />
             </div>
           </div>
-
-          {/* Debug Panel - Hapus di production 
-          */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-            <h3 className="font-semibold text-yellow-800 mb-2">Debug Info:</h3>
-            <p className="text-sm text-yellow-700">Total invitations: {invitations.length}</p>
-            {invitations.length > 0 && (
-              <div className="mt-2 text-xs text-yellow-600">
-                <p>Sample invitation data structure:</p>
-                <pre className="mt-1 bg-yellow-100 p-2 rounded overflow-auto max-h-40">
-                  {JSON.stringify(invitations[0], null, 2)}
-                </pre>
-              </div>
-            )}
-          </div>
-        )}
 
           {/* Stats Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
@@ -393,7 +394,7 @@ const InfluencerDashboardInvitations = ({ initialInvitations, influencerId }: Pr
                           <div className="flex items-center gap-3">
                             <span className="text-2xl">{getCampaignTypeIcon(invitation.campaign?.type || '')}</span>
                             <h3 className="text-2xl font-bold text-gray-900">
-                              {getCampaignName(invitation)}
+                              {invitation.campaign?.name || `Campaign ${invitation.campaignId}`}
                             </h3>
                           </div>
                           <div className={`flex items-center gap-2 px-4 py-2 rounded-full border ${statusConfig.bgColor} ${statusConfig.textColor} ${statusConfig.borderColor}`}>
@@ -405,7 +406,7 @@ const InfluencerDashboardInvitations = ({ initialInvitations, influencerId }: Pr
                         <div className="flex items-center gap-2 mb-2">
                           <Building2 className="h-5 w-5 text-gray-400" />
                           <span className="text-lg font-medium text-gray-700">
-                            {getBrandName(invitation)}
+                            {invitation.campaign?.brand?.name || `Brand ${invitation.brandId}`}
                           </span>
                         </div>
 
@@ -448,7 +449,7 @@ const InfluencerDashboardInvitations = ({ initialInvitations, influencerId }: Pr
                           <div className="flex items-center gap-3">
                             <Sparkles className="h-5 w-5 text-purple-600" />
                             <div>
-                              <p className="text-sm font-medium text-purple-800">Tipe Campaign</p>
+                              <p className="text-sm font-medium text-purple-800">Kategori</p>
                               <p className="text-sm text-purple-600 capitalize">
                                 {invitation.campaign.type?.toLowerCase() || 'General'}
                               </p>
@@ -459,14 +460,14 @@ const InfluencerDashboardInvitations = ({ initialInvitations, influencerId }: Pr
                     )}
 
                     {/* Description */}
-                    {invitation.campaign?.goal && (
+                    {invitation.campaign?.description && (
                       <div className="mb-6">
                         <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
                           <Eye className="h-4 w-4" />
                           Deskripsi Campaign
                         </h4>
                         <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                          <p className="text-gray-700 leading-relaxed">{getCampaignGoal(invitation)}</p>
+                          <p className="text-gray-700 leading-relaxed">{invitation.campaign.description}</p>
                         </div>
                       </div>
                     )}
@@ -480,29 +481,16 @@ const InfluencerDashboardInvitations = ({ initialInvitations, influencerId }: Pr
                             Pesan dari Brand
                           </h4>
                           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 rounded-xl p-4">
-                            <p className="text-gray-700 italic">&quot;{invitation.message}&quot;</p>
+                            <p className="text-gray-700 italic">"{invitation.message}"</p>
                           </div>
                         </div>
                       )}
-
-                      {/* Description */}
-                    {invitation.campaign?.goal && (
-                      <div className="mb-6">
-                        <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                          <Eye className="h-4 w-4" />
-                          Deskripsi Campaign
-                        </h4>
-                        <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                          <p className="text-gray-700 leading-relaxed">{invitation.campaign.goal}</p>
-                        </div>
-                      </div>
-                    )}
 
                       {invitation.responseMessage && (
                         <div>
                           <h4 className="font-semibold text-gray-900 mb-3">Respon Anda</h4>
                           <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 rounded-xl p-4">
-                            <p className="text-gray-700 italic">&quot;{invitation.responseMessage}&quot;</p>
+                            <p className="text-gray-700 italic">"{invitation.responseMessage}"</p>
                             {invitation.respondedAt && (
                               <p className="text-xs text-gray-500 mt-2">
                                 Direspon pada {formatDate(invitation.respondedAt)}
@@ -581,64 +569,61 @@ const InvitationActionButtons = ({ onApprove, onReject, isPending }: InvitationA
 
       {/* Response Modal */}
       {showResponseModal && (
-  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-    <div className="bg-white rounded-2xl p-6 sm:p-8 w-full max-w-md sm:max-w-lg shadow-2xl">
-      <div className="text-center space-y-4">
-        <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto ${
-          showResponseModal === 'accept' 
-            ? 'bg-gradient-to-r from-green-100 to-emerald-100' 
-            : 'bg-gradient-to-r from-red-100 to-rose-100'
-        }`}>
-          {showResponseModal === 'accept' ? (
-            <CheckCircle2 className="h-8 w-8 text-green-600" />
-          ) : (
-            <XCircle className="h-8 w-8 text-red-600" />
-          )}
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl p-8 w-full max-w-lg shadow-2xl">
+            <div className="text-center mb-6">
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                showResponseModal === 'accept' 
+                  ? 'bg-gradient-to-r from-green-100 to-emerald-100' 
+                  : 'bg-gradient-to-r from-red-100 to-rose-100'
+              }`}>
+                {showResponseModal === 'accept' ? (
+                  <CheckCircle2 className="h-8 w-8 text-green-600" />
+                ) : (
+                  <XCircle className="h-8 w-8 text-red-600" />
+                )}
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                {showResponseModal === 'accept' ? 'Terima Undangan' : 'Tolak Undangan'}
+              </h3>
+              <p className="text-gray-600">
+                {showResponseModal === 'accept'
+                  ? 'Tambahkan pesan untuk brand (opsional)'
+                  : 'Berikan alasan penolakan (opsional)'}
+              </p>
+            </div>
+
+            <textarea
+              value={responseMessage}
+              onChange={(e) => setResponseMessage(e.target.value)}
+              placeholder={showResponseModal === 'accept'
+                ? 'Terima kasih atas kesempatannya! Saya sangat tertarik untuk berkolaborasi...'
+                : 'Maaf, saat ini schedule saya sudah penuh untuk periode tersebut...'
+              }
+              className="w-full p-4 border border-gray-200 rounded-xl resize-none h-32 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+
+            <div className="flex gap-4 mt-6">
+              <button
+                onClick={() => setShowResponseModal(null)}
+                className="flex-1 px-6 py-4 text-gray-600 border border-gray-300 rounded-xl hover:bg-gray-50 font-medium transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                onClick={() => handleSubmitResponse(showResponseModal)}
+                className={`flex-1 px-6 py-4 text-white rounded-xl font-medium transition-all transform hover:scale-105 ${
+                  showResponseModal === 'accept'
+                    ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700'
+                    : 'bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700'
+                }`}
+              >
+                {showResponseModal === 'accept' ? 'Terima' : 'Tolak'}
+              </button>
+            </div>
+          </div>
         </div>
-
-        <h3 className="text-xl sm:text-2xl font-bold text-gray-900">
-          {showResponseModal === 'accept' ? 'Terima Undangan' : 'Tolak Undangan'}
-        </h3>
-        <p className="text-gray-600 text-sm sm:text-base">
-          {showResponseModal === 'accept'
-            ? 'Tambahkan pesan untuk brand (opsional)'
-            : 'Berikan alasan penolakan (opsional)'}
-        </p>
-      </div>
-
-      <textarea
-        value={responseMessage}
-        onChange={(e) => setResponseMessage(e.target.value)}
-        placeholder={
-          showResponseModal === 'accept'
-            ? 'Terima kasih atas kesempatannya! Saya sangat tertarik untuk berkolaborasi...'
-            : 'Maaf, saat ini schedule saya sudah penuh untuk periode tersebut...'
-        }
-        className="w-full p-3 sm:p-4 border border-gray-200 rounded-xl resize-none h-28 sm:h-32 mt-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-      />
-
-      <div className="flex flex-col sm:flex-row gap-3 mt-6">
-        <button
-          onClick={() => setShowResponseModal(null)}
-          className="flex-1 px-4 py-3 text-gray-600 border border-gray-300 rounded-xl hover:bg-gray-50 font-medium transition-colors"
-        >
-          Batal
-        </button>
-        <button
-          onClick={() => handleSubmitResponse(showResponseModal)}
-          className={`flex-1 px-4 py-3 text-white rounded-xl font-medium transition-all transform hover:scale-105 ${
-            showResponseModal === 'accept'
-              ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700'
-              : 'bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700'
-          }`}
-        >
-          {showResponseModal === 'accept' ? 'Terima' : 'Tolak'}
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
+      )}
     </>
   );
 };

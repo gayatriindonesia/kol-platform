@@ -79,6 +79,7 @@ model Brand {
 model Campaign {
   id                 String               @id @default(cuid())
   name               String
+  goal               String?
   brandId            String
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
@@ -89,7 +90,19 @@ model Campaign {
   startDate          DateTime
   status             CampaignStatus       @default(PENDING)
   brands             Brand                @relation(fields: [brandId], references: [id])
-  CampaignInvitation CampaignInvitation[]
+  
+  // Relations
+  CampaignInvitation  CampaignInvitation[]
+  metrics             InfluencerPlatformMetric[]   // snapshot metrics untuk campaign ini
+  snapshots           CampaignMetricSnapshot[]     // frozen metrics saat campaign berakhir
+
+  // Payment
+  paymentMethodId    String?         
+  paymentMethod      PaymentMethod?  @relation(fields: [paymentMethodId], references: [id])
+  bankId             String?         // opsional, kalau mau spesifik bank di campaign
+  bank               Bank?           @relation(fields: [bankId], references: [id])
+
+
 }
 
 model Influencer {
@@ -156,9 +169,62 @@ model InfluencerPlatform {
   views               Int        @default(0)
   influencer          Influencer @relation(fields: [influencerId], references: [id], onDelete: Cascade)
   platform            Platform   @relation(fields: [platformId], references: [id], onDelete: Cascade)
+  metrics             InfluencerPlatformMetric[]   // historical metrics
   rateCards           RateCard[]
 
   @@unique([influencerId, platformId])
+}
+
+model InfluencerPlatformMetric {
+  id                     String               @id @default(cuid())
+  influencerPlatformId   String
+  influencerPlatform     InfluencerPlatform   @relation(fields: [influencerPlatformId], references: [id], onDelete: Cascade)
+  campaignId             String?              // optional: untuk tracking per campaign
+  campaign               Campaign?            @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  
+  // Metrics data
+  followers              Int
+  following              Int?
+  posts                  Int?
+  likes                  Int                  @default(0)
+  comments               Int                  @default(0)
+  shares                 Int                  @default(0)
+  saves                  Int                  @default(0)
+  views                  Int?                 @default(0)
+  engagementRate         Float
+  avgLikesPerPost        Float?
+  avgCommentsPerPost     Float?
+  
+  // Metadata
+  metricType             MetricType           @default(PERIODIC) // CAMPAIGN_START, CAMPAIGN_END, PERIODIC
+  recordedAt             DateTime             @default(now())
+  dataSource             String?              // API, MANUAL, SCRAPING
+  
+  @@index([campaignId, recordedAt])
+  @@index([influencerPlatformId, recordedAt])
+}
+
+model CampaignMetricSnapshot {
+  id                     String    @id @default(cuid())
+  campaignId             String
+  campaign               Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  influencerId           String
+  platformId             String
+  
+  // Frozen metrics data
+  startMetrics           Json      // metrics saat campaign dimulai
+  endMetrics             Json      // metrics saat campaign berakhir
+  growthMetrics          Json      // perhitungan growth selama campaign
+  
+  // Summary data
+  totalGrowthFollowers   Int       @default(0)
+  totalGrowthEngagement  Float     @default(0)
+  performanceScore       Float?    // calculated performance score
+  
+  createdAt              DateTime  @default(now())
+  
+  @@unique([campaignId, influencerId, platformId])
+  @@index([campaignId])
 }
 
 model Service {
@@ -251,6 +317,33 @@ model Notification {
   @@index([userId, isRead], map: "idx_user_unread")
 }
 
+// Payment LIST
+model PaymentMethod {
+  id          String            @id @default(cuid())
+  name        String            // misalnya "Bank Transfer", "Credit Card", "E-Wallet"
+  code        String            @unique // misalnya "BANK_TRANSFER"
+  description String?
+  isActive    Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  banks       Bank[]            // Relasi ke daftar bank
+  campaigns   Campaign[]
+}
+
+model Bank {
+  id              String         @id @default(cuid())
+  name            String         // misalnya "BCA", "Mandiri", "BNI"
+  accountNumber   String?        // opsional, kalau mau langsung simpan nomor rekening
+  accountName     String?        // opsional, nama pemilik rekening
+  isActive        Boolean        @default(true)
+  paymentMethodId String
+  paymentMethod   PaymentMethod  @relation(fields: [paymentMethodId], references: [id])
+
+  campaigns       Campaign[]
+  @@unique([paymentMethodId, name])
+}
+
 enum UserRole {
   ADMIN
   BRAND
@@ -276,4 +369,11 @@ enum NotificationType {
   CAMPAIGN_APPROVAL
   CAMPAIGN_REJECTION
   SYSTEM
+}
+
+enum MetricType {
+  CAMPAIGN_START    // metrics saat campaign dimulai
+  CAMPAIGN_END      // metrics saat campaign berakhir
+  PERIODIC          // metrics rutin/tracking
+  MANUAL            // manual entry
 }

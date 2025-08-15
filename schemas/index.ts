@@ -31,6 +31,12 @@ export const NewPasswordSchema = z.object({
     })
 })
 
+export const RoleSettingSchema = z.object({
+  role: z.enum(["ADMIN", "BRAND", "INFLUENCER"], {
+    required_error: "Please select a role",
+  }),
+});
+
 // MODEL SCHEMA Service
 // Schema validasi untuk Service
 export const ServiceSchema = z.object({

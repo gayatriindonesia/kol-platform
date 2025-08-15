@@ -4,8 +4,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Users, Target, Check, Clipboard } from 'lucide-react';
-import Link from 'next/link';
+import { ArrowLeft, Target, Check, Clipboard } from 'lucide-react';
 import CampaignCountdown from '@/components/brand/Campaign/CampaignCountdown';
 import { updateCampaignStatus } from '@/lib/campaign.actions';
 import { useRouter } from 'next/navigation';
@@ -14,15 +13,25 @@ import { useToast } from '@/hooks/use-toast';
 interface Campaign {
   id: string;
   name?: string;
+  goal?: string | null;
   status?: string;
-  description?: string;
-  target?: string;
   type?: string;
-  budget?: number;
   createdAt?: string | Date;
   updatedAt?: string | Date;
   startDate?: string | Date;
   endDate?: string | Date;
+
+  directData?: {
+    budget?: string;
+    [key: string]: any; // supaya fleksibel
+  };
+
+  selfServiceData?: {
+    clicks?: number;
+    impressions?: number;
+    [key: string]: any;
+  };
+
   brands?: {
     user: {
       name: string | null;
@@ -109,17 +118,14 @@ const CampaignDetailId: React.FC<CampaignDetailIdProps> = ({ campaign }) => {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <div className="bg-gray-50 p-4 md:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="mb-8">
-          <Link href="/campaigns">
-            <Button variant="outline" size="sm" className="mb-4">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Kembali ke Daftar Campaign
-            </Button>
-          </Link>
-
+          <Button variant="outline" size="sm" className="mb-4" onClick={() => router.back()}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Kembali ke Daftar Campaign
+          </Button>
           <div className="flex justify-between items-start">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -144,7 +150,6 @@ const CampaignDetailId: React.FC<CampaignDetailIdProps> = ({ campaign }) => {
             </div>
           </div>
         </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Campaign Info */}
           <div className="lg:col-span-2 space-y-6">
@@ -174,7 +179,6 @@ const CampaignDetailId: React.FC<CampaignDetailIdProps> = ({ campaign }) => {
                         <Clipboard className="w-4 h-4 text-gray-600" />
                       )}
                     </Button>
-
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-500">Tipe Campaign</label>
@@ -187,14 +191,6 @@ const CampaignDetailId: React.FC<CampaignDetailIdProps> = ({ campaign }) => {
                     </div>
                   </div>
                 </div>
-
-                {campaign.description && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Deskripsi</label>
-                    <p className="text-gray-900 mt-1">{campaign.description}</p>
-                  </div>
-                )}
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-gray-500">Tanggal Mulai</label>
@@ -215,55 +211,52 @@ const CampaignDetailId: React.FC<CampaignDetailIdProps> = ({ campaign }) => {
                     </p>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
 
-                {campaign.budget && (
+            {/** Card Dinamis directData or SelfServiceData */}
+            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Target className="w-5 h-5 text-blue-600" />
+                  <span>Lainnya</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center justify-between space-x-2">
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Tujuan Campaign</label>
+                      <p className="text-gray-900 font-medium">{campaign.goal}</p>
+                    </div>
+                  </div>
                   <div>
                     <label className="text-sm font-medium text-gray-500">Budget</label>
-                    <p className="text-gray-900 font-medium">
-                      Rp {campaign.budget.toLocaleString('id-ID')}
+                    {campaign.directData && (
+                    <p className="text-gray-900 font-medium">{campaign.directData.budget}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Tanggal Mulai</label>
+                    <p className="text-gray-900">
+                      -
                     </p>
                   </div>
-                )}
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Tanggal Berakhir</label>
+                    <p className="text-gray-900">
+                      -
+                    </p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Countdown Timer - hanya tampil jika campaign aktif dan ada endDate */}
-            {campaign.endDate && (
-              <CampaignCountdown
-                endDate={campaign.endDate}
-                status={currentStatus || 'PENDING'}
-                campaignId={campaign.id}
-                onStatusChange={handleStatusChange}
-              />
-            )}
-
-            {/* Campaign Stats */}
-            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Users className="w-5 h-5 text-green-600" />
-                  <span>Statistik Campaign</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Total Influencer</span>
-                  <span className="font-semibold">-</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Response Rate</span>
-                  <span className="font-semibold">-</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Total Reach</span>
-                  <span className="font-semibold">-</span>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Brand Info */}
             <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
               <CardHeader>
@@ -290,6 +283,16 @@ const CampaignDetailId: React.FC<CampaignDetailIdProps> = ({ campaign }) => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Countdown Timer - hanya tampil jika campaign aktif dan ada endDate */}
+            {campaign.endDate && (
+              <CampaignCountdown
+                endDate={campaign.endDate}
+                status={currentStatus || 'PENDING'}
+                campaignId={campaign.id}
+                onStatusChange={handleStatusChange}
+              />
+            )}
           </div>
         </div>
       </div>

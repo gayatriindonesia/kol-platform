@@ -80,10 +80,7 @@ const [showPassword, setShowPassword] = useState(false);
         onSubmit={form.handleSubmit(onSubmit)}
       >
         <div className="flex flex-col items-center gap-2 text-center">
-          <h1 className="text-2xl font-bold">Login to your account</h1>
-          <p className="text-balance text-sm text-muted-foreground">
-            Enter your email below to login to your account
-          </p>
+          <h1 className="text-2xl font-bold">Masuk ke akun</h1>
         </div>
         <div className="grid gap-6">
           {/* Email */}
@@ -114,7 +111,7 @@ const [showPassword, setShowPassword] = useState(false);
                       href="/reset-password"
                       className="text-sm underline-offset-4 hover:underline"
                     >
-                      Forgot your password?
+                      Lupa password?
                     </Link>
                   </div>
                   <FormControl>
@@ -191,7 +188,7 @@ const [showPassword, setShowPassword] = useState(false);
           </Button>
         </div>
         <div className="text-center text-sm">
-          Don&apos;t have an account?{" "}
+          Belum punya akun?{" "}
           <a href="/signup" className="underline underline-offset-4">
             Sign up
           </a>

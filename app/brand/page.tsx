@@ -3,6 +3,7 @@ import { brandNavigationItems } from '@/constants/navigation'
 import { Users, Target, TrendingUp, Activity } from 'lucide-react'
 import { getAllBrand } from '@/lib/brand.actions'
 import { getAllCampaign } from '@/lib/campaign.actions'
+import BrandCampaignChart from '@/components/brand/BrandCampaignChart'
 
 // Type definitions
 interface Brand {
@@ -271,7 +272,7 @@ export default async function BrandHomePage() {
 
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Dynamic Bar Chart */}
+          {/* Dynamic Recharts Bar Chart */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -281,44 +282,7 @@ export default async function BrandHomePage() {
                 Perbandingan jumlah brands dan campaigns dalam 5 bulan terakhir
               </p>
             </div>
-            <div className="space-y-4">
-              {monthlyTrendData.map((data) => (
-                <div key={data.month} className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="font-medium text-gray-700">{data.month}</span>
-                    <span className="text-gray-500">B: {data.brands} | C: {data.campaigns}</span>
-                  </div>
-                  <div className="flex space-x-2">
-                    <div className="flex-1 bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-blue-500 h-2 rounded-full transition-all duration-500"
-                        style={{ 
-                          width: `${monthlyTrendData.length > 0 ? (data.brands / Math.max(...monthlyTrendData.map(d => d.brands))) * 100 : 0}%` 
-                        }}
-                      ></div>
-                    </div>
-                    <div className="flex-1 bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-green-500 h-2 rounded-full transition-all duration-500"
-                        style={{ 
-                          width: `${monthlyTrendData.length > 0 ? (data.campaigns / Math.max(...monthlyTrendData.map(d => d.campaigns))) * 100 : 0}%` 
-                        }}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              <div className="flex justify-center space-x-6 pt-2">
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span className="text-xs text-gray-600">Brands</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span className="text-xs text-gray-600">Campaigns</span>
-                </div>
-              </div>
-            </div>
+            <BrandCampaignChart data={monthlyTrendData} />
           </div>
 
           {/* Dynamic Status Overview */}

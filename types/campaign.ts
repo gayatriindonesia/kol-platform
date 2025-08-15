@@ -1,5 +1,12 @@
 // types/campaign.ts
 
+// Add PaymentMethod type
+type PaymentMethod = {
+  id: string;
+  name: string;
+};
+
+
 export interface Category {
   id: string;
   name: string;
@@ -53,6 +60,7 @@ export interface Service {
 
 export type CampaignFormData = {
   name: string;
+  goal: string;
   brandId: string;
   status: string;
   startDate: Date;
@@ -83,6 +91,8 @@ export type CampaignFormData = {
     targetAudience: string;
     categories: Category[];
     platformSelections: PlatformSelection[];
+    paymentMethod?: PaymentMethod | string | null;
+    bankId?: string;
   };
   selfService?: {
     influencerId: string;
@@ -95,6 +105,7 @@ export type CampaignStatus = 'PENDING' | 'ACTIVE' | 'REJECTED'
 export type Campaign = {
   id: string
   name: string
+  goal: string
   type: string
   status: CampaignStatus
   description: string
@@ -113,3 +124,5 @@ export type Campaign = {
     }
   }
 }
+
+export type { PaymentMethod };

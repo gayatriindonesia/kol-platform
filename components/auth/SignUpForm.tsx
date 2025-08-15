@@ -76,7 +76,7 @@ export function SignUpForm({
                 <div className="flex flex-col items-center gap-2 text-center">
                     <h1 className="text-2xl font-bold">Daftar Akun</h1>
                     <p className="text-balance text-sm text-muted-foreground">
-                        Masukan email aktif
+                        Masukan dengan email aktif
                     </p>
                 </div>
                 <div className="grid gap-6">
@@ -208,7 +208,7 @@ export function SignUpForm({
                     
                 </div>
                 <div className="text-center text-sm">
-                    sudah ada akun{" "}
+                    sudah memiliki akun?{" "}
                     <a href="/signin" className="underline underline-offset-4">
                         Sign in
                     </a>

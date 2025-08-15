@@ -8,6 +8,7 @@ import { BeatLoader } from 'react-spinners'
 import { newVerification } from '@/lib/verification.actions';
 import { FormSuccess } from '../FormSuccess';
 import { FormError } from '../FormError';
+import Link from 'next/link';
 
 const NewVerificationEmail = () => {
     const [error, setError] = useState<string | undefined>();
@@ -49,7 +50,9 @@ const NewVerificationEmail = () => {
             
             <h2 className='text-xl font-semibold'>Okee! konfirmasi email!</h2>
             <p className='text-muted-foreground mb-2'>Lanjutkan untuk autentikasi</p>
-            <Button>Kembali</Button>
+            <Link href="/signin">
+                <Button>Kembali</Button>
+            </Link>
         </div>
     )
 }

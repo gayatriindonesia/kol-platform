@@ -126,8 +126,6 @@ export async function initiateTikTokAuth() {
   authUrl.searchParams.append('code_challenge_method', 'S256');
 
   console.log("REDIRECT URI : ", TIKTOK_REDIRECT_URI);
-  console.log("CLIENT_KEY : ", TIKTOK_CLIENT_KEY);
-  console.log("CLIENT_SECRET : ", TIKTOK_CLIENT_SECRET);
   console.log("AUTH_URL : ", authUrl.toString());
 
   return redirect(authUrl.toString());

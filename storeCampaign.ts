@@ -1,11 +1,12 @@
 import { create } from "zustand";
 import { CampaignFormData } from "./types/campaign";
 import { createCampaign, sendCampaignInvitation } from "./lib/campaign.actions";
-// Import server action jika perlu
-// import { createCampaign } from '@/app/actions/campaign';
 
 // Type Definitions
 type CampaignType = 'direct' | 'selfService' | null;
+
+// Updated PaymentMethod type to accept any string (payment method ID)
+type PaymentMethod = string;
 
 interface Category {
   id: string;
@@ -48,13 +49,16 @@ interface EducationBackground {
   educations: Education[];
 }
 
+// Updated DirectCampaignData with paymentMethod
 interface DirectCampaignData {
   budget: number;
   targetAudience: string;
   experienceInfo: ExperienceInfo;
   educationBackground: EducationBackground;
-  categories: Category[]; // Category
-  platformSelections: PlatformSelection[]; // Platform
+  categories: Category[];
+  platformSelections: PlatformSelection[];
+  paymentMethod?: PaymentMethod;
+  bankId?: string;
 }
 
 export interface SelectedInfluencer {
@@ -63,10 +67,10 @@ export interface SelectedInfluencer {
   username: string;
   followers: string;
   platforms: {
-  name: string;
-  username: string;
-  followers: string;
-}[]
+    name: string;
+    username: string;
+    followers: string;
+  }[]
   image: string | null;
   categories: string[];
 }
@@ -77,8 +81,8 @@ export interface SelfServiceCampaignData {
 
 interface BaseFormData {
   personalInfo: PersonalInfo;
-  startDate?: Date;    // StarDate Campaign
-  endDate?: Date;      // EndDate Campaign
+  startDate?: Date;
+  endDate?: Date;
 }
 
 interface FormData {
@@ -87,22 +91,21 @@ interface FormData {
 }
 
 interface CampaignAppState {
-// Tambahkan state untuk brand
   selectedBrand: { id: string; name: string } | null;
   setSelectedBrand: (brand: { id: string; name: string } | null) => void;
-
   updateFormData: (data: Partial<FormData & BaseFormData>) => void;
-  
   campaignType: CampaignType;
   step: number;
-  name: string; // name Campaign
+  name: string;
+  goal: string;
   formData: FormData & BaseFormData;
   nextStep: () => void;
   prevStep: () => void;
   getTotalSteps: () => number;
-  setName: (name: string) => void; // Method untuk mengatur nama campaign
+  setName: (name: string) => void;
+  setGoal: (goal: string) => void;
   setCampaignType: (type: CampaignType) => void;
-  setDirectCategories: (categories: Category[]) => void; // Category
+  setDirectCategories: (categories: Category[]) => void;
   setPersonalInfo: (data: Partial<PersonalInfo>) => void;
   setExperienceInfo: (data: Partial<ExperienceInfo>) => void;
   setEducationBackground: (data: Partial<EducationBackground>) => void;
@@ -111,23 +114,18 @@ interface CampaignAppState {
   isSubmitting: boolean;
   setIsSubmitting: (value: boolean) => void;
   submitForm: () => Promise<
-    | { success: true; data: { id: string; [key: string]: any }; message?: string }
+    | { success: true; data: { id: string;[key: string]: any }; message?: string }
     | { success: false; message: string; data?: null }
   >;
   resetForm: () => void;
-
-  // Invitation state to send notif to influencers
   selectedInfluencers: SelectedInfluencer[];
   invitationMessage: string;
   budgetPerInfluencer: number;
   setSelectedInfluencers: (influencers: SelectedInfluencer[]) => void;
   setInvitationMessage: (message: string) => void;
   setBudgetPerInfluencer: (budget: number) => void;
-
-// Tambahkan method untuk sync data
   syncInfluencersFromForm: () => void;
   updateSelectedInfluencers: (influencers: SelectedInfluencer[]) => void;
-
   sendCampaignInvitations: (campaignId: string) => Promise<{ success: boolean; message?: string }>;
 }
 
@@ -140,6 +138,7 @@ const initialBaseData: BaseFormData = {
   },
 };
 
+// Updated initialDirectData with paymentMethod
 const initialDirectData: DirectCampaignData = {
   budget: 0,
   targetAudience: '',
@@ -152,6 +151,8 @@ const initialDirectData: DirectCampaignData = {
   },
   categories: [],
   platformSelections: [],
+  paymentMethod: undefined,
+  bankId: undefined
 };
 
 const initialSelfServiceData: SelfServiceCampaignData = {
@@ -159,16 +160,14 @@ const initialSelfServiceData: SelfServiceCampaignData = {
 };
 
 const useCampaignAppStore = create<CampaignAppState>((set, get) => ({
-
   isSubmitting: false,
   setIsSubmitting: (value) => set({ isSubmitting: value }),
-
   selectedBrand: null,
   setSelectedBrand: (brand) => set({ selectedBrand: brand }),
-
   campaignType: null,
   step: 1,
-  name: '', // Name Campaign
+  name: '',
+  goal: '',
   formData: {
     ...initialBaseData,
     direct: initialDirectData,
@@ -193,8 +192,8 @@ const useCampaignAppStore = create<CampaignAppState>((set, get) => ({
     }
   })),
 
-  // Set campaign name
   setName: (name) => set({ name }),
+  setGoal: (goal) => set({ goal }),
 
   updateFormData: (data) => set((state) => ({
     formData: {
@@ -203,11 +202,9 @@ const useCampaignAppStore = create<CampaignAppState>((set, get) => ({
     }
   })),
 
-  // Campaign type handling
   setCampaignType: (type) => set({
     campaignType: type,
     step: 1,
-    // Reset form tetapi jangan reset nama campaign
     formData: {
       ...initialBaseData,
       direct: initialDirectData,
@@ -215,7 +212,6 @@ const useCampaignAppStore = create<CampaignAppState>((set, get) => ({
     }
   }),
 
-  // Data setters
   setPersonalInfo: (data) => set((state) => ({
     formData: {
       ...state.formData,
@@ -276,20 +272,16 @@ const useCampaignAppStore = create<CampaignAppState>((set, get) => ({
   invitationMessage: '',
   budgetPerInfluencer: 0,
 
-  // Method untuk sync data influencer dari form ke invitation state
   syncInfluencersFromForm: () => {
     const { formData, campaignType } = get();
-    
+
     if (campaignType === 'selfService') {
-      // Ambil influencer dari formData dan sync ke invitation state
       const influencersFromForm = formData.selfService.selectedInfluencers;
       set({ selectedInfluencers: influencersFromForm });
     }
   },
 
-  // Method untuk update influencer di kedua tempat sekaligus
   updateSelectedInfluencers: (influencers: SelectedInfluencer[]) => {
-    // Update di form data
     set((state) => ({
       formData: {
         ...state.formData,
@@ -298,7 +290,6 @@ const useCampaignAppStore = create<CampaignAppState>((set, get) => ({
           selectedInfluencers: influencers,
         }
       },
-      // Update di invitation state juga
       selectedInfluencers: influencers
     }));
   },
@@ -309,60 +300,66 @@ const useCampaignAppStore = create<CampaignAppState>((set, get) => ({
 
   // Form Submission
   submitForm: async (): Promise<
-  | { success: true; data: { id: string; [key: string]: any }; message?: string }
-  | { success: false; message: string; data?: null }
-> => {
-  set({ isSubmitting: true });
+    | { success: true; data: { id: string;[key: string]: any }; message?: string }
+    | { success: false; message: string; data?: null }
+  > => {
+    set({ isSubmitting: true });
 
-  try {
-    const { name, campaignType, formData, selectedBrand } = get();
+    try {
+      const { name, goal, campaignType, formData, selectedBrand } = get();
 
-// Sync influencer data sebelum validasi (untuk selfService)
       if (campaignType === 'selfService') {
         get().syncInfluencersFromForm();
       }
 
-    if (!name.trim()) {
-      return { 
-        success: false, 
-        message: 'Nama campaign harus diisi', 
-        data: null
-      };
-    }
+      if (!name.trim()) {
+        return {
+          success: false,
+          message: 'Nama campaign harus diisi',
+          data: null
+        };
+      }
 
-    if (!selectedBrand?.id) {
-      return {
-        success: false,
-        message: 'Brand harus dipilih',
-        data: null
-      };
-    }
+      if (!goal.trim()) {
+        return {
+          success: false,
+          message: 'Tujuan campaign harus diisi',
+          data: null
+        };
+      }
 
-    if (!formData.startDate || !formData.endDate) {
-      return {
-        success: false,
-        message: 'Tanggal mulai dan selesai harus diisi',
-        data: null
-      };
-    }
+      if (!selectedBrand?.id) {
+        return {
+          success: false,
+          message: 'Brand harus dipilih',
+          data: null
+        };
+      }
 
-    if (formData.endDate < formData.startDate) {
-      return {
-        success: false,
-        message: 'Tanggal selesai tidak boleh sebelum tanggal mulai',
-        data: null
-      };
-    }
+      if (!formData.startDate || !formData.endDate) {
+        return {
+          success: false,
+          message: 'Tanggal mulai dan selesai harus diisi',
+          data: null
+        };
+      }
 
-    if (campaignType === 'direct' && formData.direct.categories.length === 0) {
-      return {
-        success: false,
-        message: 'Kategori belum dipilih',
-        data: null
-      };
-    }
+      if (formData.endDate < formData.startDate) {
+        return {
+          success: false,
+          message: 'Tanggal selesai tidak boleh sebelum tanggal mulai',
+          data: null
+        };
+      }
 
-     // Validasi untuk selfService - pastikan ada influencer yang dipilih
+      if (campaignType === 'direct' && formData.direct.categories.length === 0) {
+        return {
+          success: false,
+          message: 'Kategori belum dipilih',
+          data: null
+        };
+      }
+
       if (campaignType === 'selfService' && formData.selfService.selectedInfluencers.length === 0) {
         return {
           success: false,
@@ -371,74 +368,72 @@ const useCampaignAppStore = create<CampaignAppState>((set, get) => ({
         };
       }
 
-    const campaignData: CampaignFormData = {
-      name,
-      brandId: selectedBrand.id,
-      status: 'PENDING',
-      startDate: formData.startDate,
-      endDate: formData.endDate,
-      campaignType: campaignType === 'direct' ? 'DIRECT' : 'SELF_SERVICE',
-      personalInfo: formData.personalInfo,
-      experienceInfo: campaignType === 'direct' ? formData.direct.experienceInfo : undefined,
-      educationBackground: campaignType === 'direct' ? formData.direct.educationBackground : undefined,
-      direct: campaignType === 'direct' ? {
-        budget: formData.direct.budget,
-        targetAudience: formData.direct.targetAudience,
-        categories: formData.direct.categories.map(c => ({ id: c.id, name: c.name })),
-        platformSelections: formData.direct.platformSelections,
-      } : undefined,
-      selfService: campaignType === 'selfService'
-        ? formData.selfService.selectedInfluencers.map(influencer => ({
+      const campaignData: CampaignFormData = {
+        name,
+        goal,
+        brandId: selectedBrand.id,
+        status: 'PENDING',
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        campaignType: campaignType === 'direct' ? 'DIRECT' : 'SELF_SERVICE',
+        personalInfo: formData.personalInfo,
+        experienceInfo: campaignType === 'direct' ? formData.direct.experienceInfo : undefined,
+        educationBackground: campaignType === 'direct' ? formData.direct.educationBackground : undefined,
+        direct: campaignType === 'direct' ? {
+          budget: formData.direct.budget,
+          targetAudience: formData.direct.targetAudience,
+          categories: formData.direct.categories.map(c => ({ id: c.id, name: c.name })),
+          platformSelections: formData.direct.platformSelections,
+          paymentMethod: formData.direct.paymentMethod ?? null,
+          bankId: formData.direct.bankId ?? undefined
+        } : undefined,
+        selfService: campaignType === 'selfService'
+          ? formData.selfService.selectedInfluencers.map(influencer => ({
             influencerId: influencer.influencerId,
             influencerName: influencer.influencerName
           }))
-        : undefined
-    };
-
-    const result = await createCampaign(campaignData);
-
-    // Fix: Explicitly handle the success/failure cases
-    if (result.success && result.data) {
-      return {
-        success: true,
-        data: result.data,
-        message: result.message
+          : undefined
       };
-    } else {
+
+      const result = await createCampaign(campaignData);
+
+      if (result.success && result.data) {
+        return {
+          success: true,
+          data: result.data,
+          message: result.message
+        };
+      } else {
+        return {
+          success: false,
+          message: result.message || "Gagal menyimpan campaign",
+          data: null
+        };
+      }
+
+    } catch (error: any) {
+      console.error("Submission error:", error);
       return {
         success: false,
-        message: result.message || "Gagal menyimpan campaign",
+        message: "Gagal menyimpan campaign",
         data: null
       };
+    } finally {
+      set({ isSubmitting: false });
     }
+  },
 
-  } catch (error: any) {
-    console.error("Submission error:", error);
-    return {
-      success: false,
-      message: "Gagal menyimpan campaign",
-      data: null
-    };
-  } finally {
-    set({ isSubmitting: false });
-  }
-},
-
-// Update sendCampaignInvitations dengan mapping yang benar
   sendCampaignInvitations: async (campaignId) => {
-    // Sync data terlebih dahulu
     get().syncInfluencersFromForm();
-    
+
     const {
       selectedInfluencers,
       invitationMessage,
-      // budgetPerInfluencer,
       selectedBrand,
       campaignType,
       formData
     } = get();
 
-    // Debug logs
     console.log('=== DEBUG INVITATION ===');
     console.log('Campaign Type:', campaignType);
     console.log('Selected Influencers (invitation state):', selectedInfluencers);
@@ -447,15 +442,13 @@ const useCampaignAppStore = create<CampaignAppState>((set, get) => ({
     console.log('========================');
 
     if (!selectedInfluencers.length) {
-      // Coba ambil dari formData sebagai fallback
       const influencersFromForm = formData.selfService.selectedInfluencers;
       if (influencersFromForm.length > 0) {
         console.log('Using influencers from form data as fallback');
         set({ selectedInfluencers: influencersFromForm });
-        // Recursive call dengan data yang sudah ter-sync
         return get().sendCampaignInvitations(campaignId);
       }
-      
+
       return { success: false, message: 'Tidak ada influencer yang dipilih' };
     }
 
@@ -466,8 +459,7 @@ const useCampaignAppStore = create<CampaignAppState>((set, get) => ({
     try {
       const result = await sendCampaignInvitation({
         campaignId,
-        // Mapping dari SelectedInfluencer ke format yang dibutuhkan server action
-        influencerIds: selectedInfluencers.map(inf => inf.influencerId), // Gunakan influencerId
+        influencerIds: selectedInfluencers.map(inf => inf.influencerId),
         brandId: selectedBrand.id,
         message: invitationMessage,
       });
@@ -481,12 +473,11 @@ const useCampaignAppStore = create<CampaignAppState>((set, get) => ({
     }
   },
 
-
-  // Reset form
   resetForm: () => set({
     campaignType: null,
     step: 1,
-    name: '', // Reset nama campaign juga
+    name: '',
+    goal: '',
     formData: {
       ...initialBaseData,
       direct: initialDirectData,
@@ -494,14 +485,10 @@ const useCampaignAppStore = create<CampaignAppState>((set, get) => ({
     }
   }),
 
-  // Step calculation dengan memperhitungkan langkah tambahan untuk input nama
   getTotalSteps: () => {
     const type = get().campaignType;
-    // Tambahkan 1 langkah untuk input nama campaign
     return type === 'direct' ? 8 : 5;
   },
-
-  
 }));
 
 export default useCampaignAppStore;

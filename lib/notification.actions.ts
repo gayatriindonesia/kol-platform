@@ -1,5 +1,3 @@
-// lib/notification.actions.ts
-
 'use server'
 
 import { db } from '@/lib/db'

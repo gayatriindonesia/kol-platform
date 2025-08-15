@@ -8,6 +8,17 @@ import { disconnectTikTok, refreshTikTokData } from "@/lib/tiktok.actions";
 import { getRateCardsByInfluencerPlatform } from "@/lib/rateCard.actions";
 import { formatCurrency } from "@/lib/utils";
 import { InfluencerPlatform, RateCard, Service } from "@prisma/client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import ConnectTikTokButton from "./ConnectTikTokButton";
 
 interface TikTokDataProps {
   connections: (InfluencerPlatform & {
@@ -29,6 +40,9 @@ export default function TikTokData({ connections: initialConnections }: TikTokDa
   const [lastAutoRefresh, setLastAutoRefresh] = useState<Date | null>(null);
   const [rateCards, setRateCards] = useState<Record<string, RateCardWithService[]>>({});
   const [showRateCards, setShowRateCards] = useState<Record<string, boolean>>({});
+
+  const [disconnectTarget, setDisconnectTarget] = useState<string | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
     const autoRefreshInterval = setInterval(async () => {
@@ -110,15 +124,15 @@ export default function TikTokData({ connections: initialConnections }: TikTokDa
     }
   };
 
-  const handleDisconnect = async (connectionId: string) => {
-    if (!confirm("Are you sure you want to disconnect this TikTok account?")) return;
+  const handleDisconnect = async () => {
+    if (!disconnectTarget) return;
 
-    setIsDisconnecting(prev => ({ ...prev, [connectionId]: true }));
+    setIsDisconnecting(prev => ({ ...prev, [disconnectTarget]: true }));
     try {
-      const result = await disconnectTikTok(connectionId);
+      const result = await disconnectTikTok(disconnectTarget);
       if (result.success) {
         toast.success("TikTok account disconnected");
-        setConnections(prev => prev.filter(conn => conn.id !== connectionId));
+        setConnections(prev => prev.filter(conn => conn.id !== disconnectTarget));
       } else {
         toast.error(result.error || "Failed to disconnect account");
       }
@@ -126,7 +140,9 @@ export default function TikTokData({ connections: initialConnections }: TikTokDa
       console.error("An error occurred while disconnecting account", error);
       toast.error("An error occurred while disconnecting account");
     } finally {
-      setIsDisconnecting(prev => ({ ...prev, [connectionId]: false }));
+      setIsDisconnecting(prev => ({ ...prev, [disconnectTarget!]: false }));
+      setDisconnectTarget(null);
+      setIsDialogOpen(false);
     }
   };
 
@@ -144,7 +160,7 @@ export default function TikTokData({ connections: initialConnections }: TikTokDa
   const toggleRateCards = async (connectionId: string) => {
     const isCurrentlyShown = showRateCards[connectionId];
     setShowRateCards(prev => ({ ...prev, [connectionId]: !isCurrentlyShown }));
-    
+
     if (!isCurrentlyShown && !rateCards[connectionId]) {
       await loadRateCards(connectionId);
     }
@@ -156,6 +172,10 @@ export default function TikTokData({ connections: initialConnections }: TikTokDa
         <FaTiktok className="mx-auto h-12 w-12 text-gray-400 mb-3" />
         <h3 className="text-lg font-medium">No TikTok accounts connected</h3>
         <p className="mt-1">Connect your TikTok account to display analytics and manage campaigns.</p>
+        {/** Tiktok Button Connect */}
+        <div className="flex justify-center mt-4">
+          <ConnectTikTokButton />
+        </div>
       </div>
     );
   }
@@ -191,7 +211,10 @@ export default function TikTokData({ connections: initialConnections }: TikTokDa
               variant="destructive"
               size="sm"
               disabled={isDisconnecting[connection.id]}
-              onClick={() => handleDisconnect(connection.id)}
+              onClick={() => {
+                setDisconnectTarget(connection.id);
+                setIsDialogOpen(true);
+              }}
             >
               {isDisconnecting[connection.id] ? (
                 <FaTrash className="w-4 h-4 mr-2 animate-pulse" />
@@ -206,7 +229,6 @@ export default function TikTokData({ connections: initialConnections }: TikTokDa
 
       {/* Auto-refresh status bar */}
       <div className="flex items-center justify-between text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg">
-        <span>Auto-refresh: Active (every 5 minutes)</span>
         {lastAutoRefresh && (
           <span>Last auto-refresh: {lastAutoRefresh.toLocaleTimeString()}</span>
         )}
@@ -296,7 +318,7 @@ export default function TikTokData({ connections: initialConnections }: TikTokDa
                     (Harga dalam IDR)
                   </span>
                 </div>
-                
+
                 {rateCards[connection.id] && rateCards[connection.id].length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {rateCards[connection.id].map((rateCard) => (
@@ -314,23 +336,23 @@ export default function TikTokData({ connections: initialConnections }: TikTokDa
                             </span>
                           )}
                         </div>
-                        
+
                         <p className="text-2xl font-bold text-green-600 mb-2">
                           {formatCurrency(rateCard.price)}
                         </p>
-                        
+
                         {rateCard.service.description && (
                           <p className="text-sm text-gray-600 mb-2">
                             {rateCard.service.description}
                           </p>
                         )}
-                        
+
                         {rateCard.description && (
                           <p className="text-xs text-gray-500 italic">
                             {rateCard.description}
                           </p>
                         )}
-                        
+
                         <div className="flex items-center justify-between mt-3 text-xs text-gray-500">
                           <span>Type: {rateCard.service.type}</span>
                           <span>
@@ -352,6 +374,24 @@ export default function TikTokData({ connections: initialConnections }: TikTokDa
           </div>
         );
       })}
+
+      {/* AlertDialog untuk Disconnect */}
+      <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Disconnect Akun Tiktok</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah anda ingin disconnect akun Tiktok Anda?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDisconnectTarget(null)}>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDisconnect}>
+              Disconnect
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

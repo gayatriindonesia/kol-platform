@@ -3,6 +3,7 @@
 import React, { useState, useTransition } from 'react'
 import { removeInfluencerCategory, updateInfluencerCategories } from '@/lib/category.actions'
 import { Category, InfluencerCategory } from '@prisma/client'
+import { useToast } from '@/hooks/use-toast'
 
 interface CategoryManagerProps {
   categories: Category[]
@@ -18,6 +19,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({
   )
   const [isUpdating, setIsUpdating] = useState(false)
   const [isPending, startTransition] = useTransition()
+  const { toast } = useToast()
 
   const handleCategoryToggle = (categoryId: string) => {
     setSelectedCategories(prev => 
@@ -28,22 +30,33 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({
   }
 
   const handleUpdateCategories = () => {
-    setIsUpdating(true)
-    startTransition(async () => {
-      try {
-        const result = await updateInfluencerCategories(selectedCategories)
-        if (result.error) {
-          alert(result.error)
-        } else {
-          alert('Kategori berhasil diperbarui!')
-        }
-      } catch {
-        alert('Gagal memperbarui kategori')
-      } finally {
-        setIsUpdating(false)
+  setIsUpdating(true)
+  startTransition(async () => {
+    try {
+      const result = await updateInfluencerCategories(selectedCategories)
+      if (result.error) {
+        toast({
+          title: "Gagal",
+          description: result.error,
+          variant: "destructive",
+        })
+      } else {
+        toast({
+          title: "Berhasil",
+          description: "Kategori berhasil diperbarui!",
+        })
       }
-    })
-  }
+    } catch {
+      toast({
+        title: "Error",
+        description: "Gagal memperbarui kategori.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsUpdating(false)
+    }
+  })
+}
 
   const handleQuickRemove = (categoryId: string) => {
     startTransition(async () => {

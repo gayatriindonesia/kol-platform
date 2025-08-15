@@ -47,7 +47,8 @@ export const signin = async (values: z.infer<typeof SignInSchema>) => {
       email,
       password,
       redirectTo: DEFAULT_LOGIN_REDIRECT,
-    })
+    });
+    return { success: "Login berhasil!" };
   } catch (error) {
     if (error instanceof AuthError) {
       switch (error.message) {

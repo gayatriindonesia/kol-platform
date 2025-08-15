@@ -63,10 +63,11 @@ const CampaignPage = () => {
     setTimeout(() => setToast({ show: false, message: "", type: "info" }), 3000);
   };
 
+  {/** Title MultiForm
   const getStepTitle = () => {
     // Common step titles for both types
     const commonStepTitles: Record<number, string> = {
-      1: "Nama Campaign",
+      1: "Campaign Brief",
       2: "Pilih Brand",
     };
 
@@ -90,6 +91,7 @@ const CampaignPage = () => {
     // Return common title or type-specific title
     return commonStepTitles[step] || (campaignType ? typeSpecificTitles[campaignType]?.[step] : "");
   };
+   */}
 
   const handleNextStep = () => {
     // Validation for step 1 (Campaign Name)
@@ -277,9 +279,11 @@ const CampaignPage = () => {
               
               {/* Step Title */}
               <div className="text-center mt-6 mb-2">
+                {/**
                 <h2 className="text-xl md:text-2xl font-semibold text-gray-800">
                   {getStepTitle()}
                 </h2>
+                 */}
                 <p className="text-gray-600 text-sm mt-1">
                   Step {step} of {getTotalSteps()}
                 </p>

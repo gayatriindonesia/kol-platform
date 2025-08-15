@@ -15,11 +15,13 @@ interface SidebarProps {
 
 export default function Sidebar({ isMobile, session: initialSession }: SidebarProps) {
   const pathname = usePathname()
-  const { data: session } = useSession()
+  const { data: session, status } = useSession() // Tambahkan status
   const [isOpen, setIsOpen] = useState(true)
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
 
+  // Perbaikan logic untuk menentukan session yang digunakan
   const currentSession = session || initialSession
+  const isSessionLoading = status === 'loading' && !initialSession
 
   useEffect(() => {
     setIsOpen(!isMobile)
@@ -84,23 +86,36 @@ export default function Sidebar({ isMobile, session: initialSession }: SidebarPr
 
         {/* User Info */}
         <div className="px-4 py-2">
-          <div className="flex items-center">
-            <div className="h-10 w-10 rounded-full bg-gray-700 flex items-center justify-center mr-3">
-              <Image
-                src={currentSession?.user?.image || '/images/avataruser.png'}
-                alt={currentSession?.user?.name || 'User'}
-                className="h-10 w-10 rounded-full"
-                width={500}
-                height={500}
-              />
-            </div>
-            <div>
-              <div className="font-medium">
-                {truncateText(currentSession?.user?.name || 'Brand User', 15)}
+          {isSessionLoading ? (
+            // Loading skeleton untuk user info
+            <div className="flex items-center animate-pulse">
+              <div className="h-10 w-10 rounded-full bg-gray-600 mr-3"></div>
+              <div>
+                <div className="h-4 w-24 bg-gray-600 rounded mb-1"></div>
+                <div className="h-3 w-32 bg-gray-700 rounded"></div>
               </div>
-              <div className="text-sm text-gray-400">{currentSession?.user?.email || ''}</div>
             </div>
-          </div>
+          ) : (
+            <div className="flex items-center">
+              <div className="h-10 w-10 rounded-full bg-gray-700 flex items-center justify-center mr-3">
+                <Image
+                  src={currentSession?.user?.image || '/images/avataruser.png'}
+                  alt={currentSession?.user?.name || 'User'}
+                  className="h-10 w-10 rounded-full"
+                  width={500}
+                  height={500}
+                />
+              </div>
+              <div>
+                <div className="font-medium">
+                  {truncateText(currentSession?.user?.name || 'Brand User', 15)}
+                </div>
+                <div className="text-sm text-gray-400">
+                  {currentSession?.user?.email || 'Loading...'}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Navigation */}
@@ -189,19 +204,6 @@ export default function Sidebar({ isMobile, session: initialSession }: SidebarPr
             </ul>
           </nav>
         </div>
-
-        {/* Logout Button (optional) */}
-        {/*
-        <div className="absolute bottom-0 w-full p-4">
-          <button 
-            onClick={handleSignOut}
-            className="flex items-center text-gray-300 hover:text-white w-full"
-          >
-            <span className="mr-3">🚪</span>
-            Sign out
-          </button>
-        </div>
-        */}
       </aside>
     </>
   )
