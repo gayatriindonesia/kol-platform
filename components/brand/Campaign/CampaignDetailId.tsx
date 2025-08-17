@@ -237,6 +237,7 @@ const CampaignDetailId: React.FC<CampaignDetailIdProps> = ({ campaign }) => {
                     )}
                   </div>
                 </div>
+                {/**
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-gray-500">Tanggal Mulai</label>
@@ -251,6 +252,7 @@ const CampaignDetailId: React.FC<CampaignDetailIdProps> = ({ campaign }) => {
                     </p>
                   </div>
                 </div>
+                 */}
               </CardContent>
             </Card>
           </div>
@@ -270,7 +272,7 @@ const CampaignDetailId: React.FC<CampaignDetailIdProps> = ({ campaign }) => {
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Contact Person</label>
+                  <label className="text-sm font-medium text-gray-500">Username</label>
                   <p className="text-gray-900">
                     {campaign.brands?.user?.name || 'N/A'}
                   </p>

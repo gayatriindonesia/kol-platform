@@ -125,7 +125,7 @@ export const brandNavigationItems: NavigationItem[] = [
   },
   {
     name: 'Pengaturan',
-    path: '/brand/settings',
+    path: '/brand/profile',
     icon: MdSettings,
   },
 ]
@@ -153,7 +153,7 @@ export const kolNavigationItems: NavigationItem[] = [
   },
   {
     name: 'Settings',
-    path: '/kol/settings',
+    path: '/kol/profile',
     icon: MdSettings,
   },
 ]

@@ -447,7 +447,7 @@ export function DataTable<TData, TValue>({
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Delete</AlertDialogTitle>
+            <AlertDialogTitle>Campaign Dihapus</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete <Badge variant="outline" className="ml-1 font-semibold">{selectedCampaign?.name}</Badge>?
               This action cannot be undone.

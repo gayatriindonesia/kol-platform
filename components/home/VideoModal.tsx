@@ -1,5 +1,6 @@
 import React from 'react';
 import { X } from 'lucide-react';
+import { Button } from '../ui/button';
 
 interface VideoModalProps {
   selectedVideo: string | null;
@@ -13,12 +14,12 @@ const VideoModal: React.FC<VideoModalProps> = ({ selectedVideo, closeVideo, vide
   return (
     <div className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
       <div className="relative w-full max-w-5xl">
-        <button
+        <Button
           onClick={closeVideo}
           className="absolute -top-12 right-0 p-3 rounded-full bg-slate-800/80 hover:bg-slate-700 transition-colors z-10"
         >
           <X className="w-6 h-6 text-white" />
-        </button>
+        </Button>
         <div className="aspect-video rounded-2xl overflow-hidden shadow-2xl">
           <video
             ref={videoRef}

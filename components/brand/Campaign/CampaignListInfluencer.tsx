@@ -134,7 +134,7 @@ const CampaignStatusBadge = ({ status, dataType }: { status: string; dataType?: 
           variant: 'secondary' as const,
           color: 'bg-blue-100 text-blue-800 border-blue-200',
           icon: <CheckCircle className="w-3 h-3" />,
-          label: dataType === 'snapshot' ? 'Final Results' : 'Completed'
+          label: dataType === 'snapshot' ? 'Data Akhir' : 'Completed'
         };
       case 'PENDING':
         return {
@@ -294,7 +294,7 @@ const InfluencerCard = ({
                   </Badge>
                   {dataType && (
                     <Badge variant="outline" className="text-xs">
-                      {dataType === 'live' ? 'Live Data' : 'Final Data'}
+                      {dataType === 'live' ? 'Live Data' : 'Data Terakhir'}
                     </Badge>
                   )}
                 </div>
@@ -318,7 +318,7 @@ const InfluencerCard = ({
           <div className="mb-4">
             <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
-              Performance Metrics
+              Performa Kinerja
             </h4>
             
             {(() => {
@@ -383,7 +383,7 @@ const InfluencerCard = ({
             Platform Details ({influencer.influencer.platforms?.length || 0})
             {campaignStatus === 'COMPLETED' && (
               <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
-                Final Results
+                Data Akhir
               </Badge>
             )}
           </h4>
@@ -418,7 +418,7 @@ const InfluencerCard = ({
                   {/* Current Platform Stats */}
                   <div className="grid grid-cols-3 gap-2 text-xs mb-2">
                     <div>
-                      <span className="text-gray-500 block">Current Followers</span>
+                      <span className="text-gray-500 block">Followers</span>
                       <span className="font-medium text-gray-900">
                         {formatNumber(platform.followers)}
                       </span>
@@ -441,7 +441,7 @@ const InfluencerCard = ({
                   {latestMetrics && startMetrics && (
                     <div className="border-t border-gray-200 pt-2 mt-2">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-gray-500">Campaign Growth:</span>
+                        <span className="text-gray-500">Peningkatan Campaign:</span>
                         <div className="flex items-center gap-3">
                           <div className="flex items-center gap-1">
                             <Users className="w-3 h-3 text-blue-500" />
@@ -490,7 +490,7 @@ const InfluencerCard = ({
               className="w-full group hover:bg-blue-50 hover:border-blue-200 transition-colors duration-200"
             >
               <Eye className="w-4 h-4 mr-2 group-hover:text-blue-600" />
-              View Profile
+              Lihat Detail Influencer
             </Button>
           </Link>
         </div>
@@ -575,7 +575,7 @@ export default async function CampaignListInfluencer({ campaignId }: CampaignLis
               <div>
                 <h2 className="text-xl font-bold text-gray-900">Campaign Influencers</h2>
                 <p className="text-sm text-gray-500 font-normal">
-                  {acceptedInfluencers} of {totalInfluencers} influencers active
+                  {acceptedInfluencers} of {totalInfluencers} influencers aktif
                 </p>
               </div>
             </CardTitle>
@@ -612,7 +612,7 @@ export default async function CampaignListInfluencer({ campaignId }: CampaignLis
                     <div className="flex items-center gap-2">
                       <CheckCircle className="w-4 h-4 text-blue-500" />
                       <span className="text-sm text-blue-600 font-medium">
-                        Final results locked
+                        Data Terakhir
                       </span>
                     </div>
                   )}
@@ -638,11 +638,11 @@ export default async function CampaignListInfluencer({ campaignId }: CampaignLis
           {metricsResult?.success && metricsResult.data && (
             <div className="mt-8 pt-6 border-t border-gray-200">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Campaign Overview</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Tinjauan Campaign</h3>
                 <Link href={`/brand/campaign/${campaignId}/analytics`}>
                   <Button variant="outline" size="sm">
                     <BarChart3 className="w-4 h-4 mr-2" />
-                    View Full Analytics
+                    Lihat Semua Analytics
                   </Button>
                 </Link>
               </div>
@@ -651,7 +651,7 @@ export default async function CampaignListInfluencer({ campaignId }: CampaignLis
                 <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
                   <div className="flex items-center gap-2 mb-2">
                     <Users className="w-4 h-4 text-blue-600" />
-                    <span className="text-sm font-medium text-gray-600">Active Influencers</span>
+                    <span className="text-sm font-medium text-gray-600">Influencers Aktif</span>
                   </div>
                   <p className="text-2xl font-bold text-gray-900">{acceptedInfluencers}</p>
                 </div>
@@ -677,7 +677,7 @@ export default async function CampaignListInfluencer({ campaignId }: CampaignLis
                 <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
                   <div className="flex items-center gap-2 mb-2">
                     <Clock className="w-4 h-4 text-orange-600" />
-                    <span className="text-sm font-medium text-gray-600">Last Update</span>
+                    <span className="text-sm font-medium text-gray-600">Update Terakhir</span>
                   </div>
                   <p className="text-sm font-medium text-gray-900">
                     {new Date().toLocaleDateString()}

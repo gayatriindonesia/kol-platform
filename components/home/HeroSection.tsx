@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
+import Image from 'next/image';
 
 interface CarouselSlide {
   title: string;
@@ -37,10 +38,12 @@ const HeroSection: React.FC<HeroSectionProps> = ({
     <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Image with Overlay */}
       <div className="absolute inset-0">
-        <img
+        <Image
           src={carouselSlides[currentSlide].image}
           alt="Hero background"
           className="w-full h-full object-cover transition-all duration-1000"
+          width={1000}
+          height={1000}
         />
         <div className="absolute inset-0 bg-gradient-to-br from-slate-950/80 via-slate-900/60 to-blue-900/40" />
       </div>

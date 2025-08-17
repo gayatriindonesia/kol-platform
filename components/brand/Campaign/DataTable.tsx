@@ -447,15 +447,15 @@ export function DataTable<TData, TValue>({
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Delete</AlertDialogTitle>
+            <AlertDialogTitle>Campaign Dihapus</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete <Badge variant="outline" className="ml-1 font-semibold">{selectedCampaign?.name}</Badge>?
-              This action cannot be undone.
+              Apakah anda yakin ingin menghapus <Badge variant="outline" className="ml-1 font-semibold">{selectedCampaign?.name}</Badge>?
+              Tindakan ini tidak dapat dibatalkan.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-4 flex flex-col sm:flex-row gap-2">
             <AlertDialogCancel asChild>
-              <Button variant="outline" className="mt-0">Cancel</Button>
+              <Button variant="outline" className="mt-0">Batal</Button>
             </AlertDialogCancel>
             <AlertDialogAction asChild>
               <Button
@@ -464,7 +464,7 @@ export function DataTable<TData, TValue>({
                 disabled={isLoading}
               >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Delete
+                Hapus
               </Button>
             </AlertDialogAction>
           </AlertDialogFooter>

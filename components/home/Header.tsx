@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Shield, FileText, Menu, Loader2 } from 'lucide-react';
+import { Button } from '../ui/button';
 
 interface HeaderProps {
   activeSection: string;
@@ -75,7 +76,7 @@ const Header: React.FC<HeaderProps> = ({
 
             {/* Get Started Button */}
             <div className="flex items-center space-x-4 ml-4">
-              <button
+              <Button
                 onClick={handleGetStarted}
                 disabled={loading}
                 className="flex items-center justify-center bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:from-blue-600 hover:to-purple-700 transition-all transform hover:scale-105 shadow-lg hover:shadow-blue-500/25 disabled:opacity-70 disabled:cursor-not-allowed"
@@ -88,17 +89,17 @@ const Header: React.FC<HeaderProps> = ({
                 ) : (
                   'Get Started'
                 )}
-              </button>
+              </Button>
             </div>
           </nav>
 
           {/* Mobile Menu Button */}
-          <button
+          <Button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="lg:hidden p-2 rounded-xl hover:bg-slate-800 transition-colors"
           >
             <Menu className="w-6 h-6" />
-          </button>
+          </Button>
         </div>
 
         {/* Mobile Navigation */}
@@ -107,23 +108,23 @@ const Header: React.FC<HeaderProps> = ({
         } overflow-hidden`}>
           <div className="py-4 space-y-2">
             {navItems.map((item) => (
-              <button
+              <Button
                 key={item}
                 onClick={() => scrollToSection(item.toLowerCase())}
                 className="block w-full text-left px-4 py-3 text-slate-300 hover:text-blue-400 hover:bg-slate-800/50 rounded-lg transition-all"
               >
                 {item}
-              </button>
+              </Button>
             ))}
             <div className="border-t border-slate-800 pt-4 mt-4">
-              <button className="flex items-center space-x-2 px-4 py-3 text-slate-400 hover:text-blue-400 transition-colors">
+              <Button className="flex items-center space-x-2 px-4 py-3 text-slate-400 hover:text-blue-400 transition-colors">
                 <Shield className="w-4 h-4" />
                 <span>Privacy Policy</span>
-              </button>
-              <button className="flex items-center space-x-2 px-4 py-3 text-slate-400 hover:text-blue-400 transition-colors">
+              </Button>
+              <Button className="flex items-center space-x-2 px-4 py-3 text-slate-400 hover:text-blue-400 transition-colors">
                 <FileText className="w-4 h-4" />
                 <span>Terms of Service</span>
-              </button>
+              </Button>
             </div>
           </div>
         </div>

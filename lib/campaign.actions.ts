@@ -1968,8 +1968,8 @@ export async function getCampaignInfluencersById(
       where: {
         campaignId,
         status: {
-        //  in: ['ACTIVE', 'COMPLETED'], // hanya yang sudah accepted
-        in: ['ACTIVE']
+        in: ['ACTIVE', 'COMPLETED'], // hanya yang sudah accepted
+        //in: ['ACTIVE']
         },
       },
       include: {

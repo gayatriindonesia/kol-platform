@@ -24,29 +24,29 @@ export const carouselSlides = [
 
 export const teamMembers = [
   {
-    name: "",
-    role: "Founder",
-    image: "/images/teams/1_big.jpg",
-    bio: "10+ years in digital marketing"
+    name: "Microsoft",
+    industry: "Technology Solutions",
+    logo: "https://images.unsplash.com/photo-1633419461186-7d40a38105ec?w=200&h=100&fit=crop",
+    description: "Strategic technology partnership providing cloud infrastructure and enterprise solutions to enhance our service delivery and scalability.",
+    partnership: "Technology Partner",
+    website: "https://microsoft.com"
   },
   {
-    name: "",
-    role: "Business Director",
-    image: "/images/teams/2_big.jpg",
-    bio: "Award-winning creative strategist"
+    name: "Deloitte",
+    industry: "Consulting Services",
+    logo: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=100&fit=crop",
+    description: "Professional services alliance focusing on business transformation and strategic consulting for our enterprise clients.",
+    partnership: "Strategic Alliance",
+    website: "https://deloitte.com"
   },
   {
-    name: "",
-    role: "Senior Account Manager",
-    image: "/images/teams/4_big.jpg",
-    bio: "Expert in influencer relations"
+    name: "Amazon Web Services",
+    industry: "Cloud Computing",
+    logo: "https://images.unsplash.com/photo-1523474253046-8cd2748b5fd2?w=200&h=100&fit=crop",
+    description: "Cloud infrastructure partnership enabling scalable, secure, and reliable hosting solutions for our global operations.",
+    partnership: "Infrastructure Partner",
+    website: "https://deloitte.com"
   },
-  {
-    name: "",
-    role: "Account Executive",
-    image: "/images/teams/5_big.jpg",
-    bio: "AI & ML specialist"
-  }
 ];
 
 export const platforms = [

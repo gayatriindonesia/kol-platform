@@ -3,6 +3,7 @@
 import React from 'react';
 import { Mail, Phone, MapPin } from 'lucide-react';
 import { FaInstagram, FaTwitter, FaLinkedin, FaYoutube } from 'react-icons/fa';
+import Link from 'next/link';
 
 const ContactSection = () => {
   const contactInfo = [
@@ -46,7 +47,7 @@ const ContactSection = () => {
 
             <div className="space-y-6">
               {contactInfo.map((contact, index) => (
-                <a
+                <Link
                   key={index}
                   href={contact.href}
                   className="flex items-center space-x-4 p-4 rounded-2xl bg-slate-800/50 hover:bg-slate-700/50 transition-all duration-300 group"
@@ -58,7 +59,7 @@ const ContactSection = () => {
                     <p className="text-slate-400 text-sm">{contact.label}</p>
                     <p className="text-white font-medium">{contact.value}</p>
                   </div>
-                </a>
+                </Link>
               ))}
             </div>
 
@@ -67,7 +68,7 @@ const ContactSection = () => {
               <h4 className="text-lg font-semibold mb-4 text-white">Follow Us</h4>
               <div className="flex space-x-4">
                 {socialLinks.map((social, index) => (
-                  <a
+                  <Link
                     key={index}
                     href={social.href}
                     className="w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center hover:bg-slate-700 transition-all duration-300 transform hover:scale-110 group"
@@ -76,7 +77,7 @@ const ContactSection = () => {
                     <social.icon
                       className="w-5 h-5 text-slate-400 group-hover:text-white transition-colors"
                     />
-                  </a>
+                  </Link>
                 ))}
               </div>
             </div>

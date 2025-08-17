@@ -238,7 +238,7 @@ export default async function BrandHomePage() {
                     <Activity className="h-5 w-5 text-orange-600" />
                   </div>
                   <h3 className="text-sm font-medium text-gray-600">
-                    <Link href="/brand/campaigns">Active Campaigns</Link>
+                    <Link href="/brand/campaigns">Campaign Aktif</Link>
                   </h3>
                 </div>
               </div>
@@ -257,7 +257,7 @@ export default async function BrandHomePage() {
                   <div className="p-2 bg-purple-100 rounded-lg">
                     <TrendingUp className="h-5 w-5 text-purple-600" />
                   </div>
-                  <h3 className="text-sm font-medium text-gray-600">Growth Rate</h3>
+                  <h3 className="text-sm font-medium text-gray-600">Tingkat Pertumbuhan</h3>
                 </div>
               </div>
               <div className="space-y-1">
@@ -299,7 +299,7 @@ export default async function BrandHomePage() {
               <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
                 <div className="flex items-center space-x-3">
                   <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
-                  <span className="font-medium text-gray-900">Active Campaigns</span>
+                  <span className="font-medium text-gray-900">Campaign Aktif</span>
                 </div>
                 <div className="text-right">
                   <div className="font-bold text-gray-900">{campaignStatus.active}</div>
@@ -310,7 +310,7 @@ export default async function BrandHomePage() {
               <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
                 <div className="flex items-center space-x-3">
                   <div className="w-4 h-4 bg-green-500 rounded-full"></div>
-                  <span className="font-medium text-gray-900">Pending Campaigns</span>
+                  <span className="font-medium text-gray-900">Campaign Pending</span>
                 </div>
                 <div className="text-right">
                   <div className="font-bold text-gray-900">{campaignStatus.pending}</div>
@@ -321,7 +321,7 @@ export default async function BrandHomePage() {
               <div className="flex items-center justify-between p-4 bg-yellow-50 rounded-lg">
                 <div className="flex items-center space-x-3">
                   <div className="w-4 h-4 bg-yellow-500 rounded-full"></div>
-                  <span className="font-medium text-gray-900">Completed Campaigns</span>
+                  <span className="font-medium text-gray-900">Campaign Selesai</span>
                 </div>
                 <div className="text-right">
                   <div className="font-bold text-gray-900">{campaignStatus.completed}</div>

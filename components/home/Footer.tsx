@@ -52,13 +52,13 @@ const Footer = () => {
             </p>
             <div className="flex space-x-4">
               {socialLinks.map((social, index) => (
-                <a
+                <Link
                   key={index}
                   href={social.href}
                   className="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center hover:bg-slate-700 transition-all duration-300 transform hover:scale-110 group"
                 >
                   <social.icon className="w-5 h-5 text-slate-400 group-hover:text-white transition-colors" />
-                </a>
+                </Link>
               ))}
             </div>
           </div>
@@ -69,9 +69,9 @@ const Footer = () => {
             <ul className="space-y-3">
               {services.map((service, index) => (
                 <li key={index}>
-                  <a href="#" className="text-slate-400 hover:text-blue-400 transition-colors">
+                  <Link href="#" className="text-slate-400 hover:text-blue-400 transition-colors">
                     {service}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -83,9 +83,9 @@ const Footer = () => {
             <ul className="space-y-3">
               {company.map((item, index) => (
                 <li key={index}>
-                  <a href="#" className="text-slate-400 hover:text-blue-400 transition-colors">
+                  <Link href="#" className="text-slate-400 hover:text-blue-400 transition-colors">
                     {item}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>

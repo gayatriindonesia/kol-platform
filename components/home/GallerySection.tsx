@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Play } from 'lucide-react';
+import Image from 'next/image';
 
 interface VideoItem {
   id: string;
@@ -39,10 +40,12 @@ const GallerySection: React.FC<GallerySectionProps> = ({ videoGallery, openVideo
               onClick={() => openVideo(video.id)}
             >
               <div className="relative overflow-hidden">
-                <img
+                <Image
                   src={video.thumbnail}
                   alt={video.title}
                   className="w-full h-64 object-cover transition-transform duration-700 group-hover:scale-110"
+                  width={1000}
+                  height={1000}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                 <div className="absolute inset-0 flex items-center justify-center">

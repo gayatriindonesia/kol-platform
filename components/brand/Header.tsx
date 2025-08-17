@@ -138,7 +138,7 @@ export default function Header({ session: initialSession }: HeaderProps) {
                 <span className="ml-2">Your Profile</span>
               </Link>
               <Link
-                href="/admin/settings"
+                href="/brand/profile"
                 className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100"
               >
                 <Settings size={18} />

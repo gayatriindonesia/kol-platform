@@ -1,39 +1,94 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { getInfluencerById } from '@/lib/influencer.actions';
+import {
+  getInfluencerPlatformData,
+  getInfluencerActiveCampaigns,
+  getInfluencerCampaignMetrics
+} from "@/lib/influencer.actions"
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Activity, ArrowLeft, Award, BarChart3, Calendar, Camera, DollarSign, Eye, Globe, Heart, Instagram, Loader2, Mail, MapPin, MessageCircle, Phone, Share2, Star, Target, ThumbsUp, TrendingUp, User, Users, Youtube, Zap } from 'lucide-react';
+import {
+  Activity, ArrowLeft, Award, BarChart3, Calendar,
+  Globe, Heart, Loader2, Mail,
+  MapPin, Phone, Share2, Star,
+  TrendingUp, User, Users, Clock, CheckCircle,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { FaInstagram } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
+import { FaFacebook, FaInstagram, FaTiktok, FaTwitter, FaYoutube } from 'react-icons/fa';
+import Image from 'next/image';
 
-// Update interface berdasarkan struktur data yang sebenarnya
-interface Influencer {
+// Enhanced interfaces
+interface Platform {
   id: string;
-  name: string | null;
-  email: string | null;
-  emailVerified: Date | null;
-  image: string | null;
-  role: string | null;
+  username: string;
+  followers: number | null;
+  posts: number | null;
+  engagementRate: number | null;
+  likesCount: number | null;
+  commentsCount: number | null;
+  sharesCount: number | null;
+  savesCount: number | null;
+  views: number | null;
+  platform: {
+    id: string;
+    name: string;
+  };
 }
 
-// Definisikan tipe response dari API
-interface ApiResponse {
-  data?: {
-    user: Influencer;
-    categories: any[];
+interface ActiveCampaign {
+  id: string;
+  status: string;
+  invitedAt: Date;
+  respondedAt: Date | null;
+  responseMessage: string | null;
+  campaign: {
+    id: string;
+    name: string;
+    goal: string | null;
+    status: string;
+    startDate: Date;
+    endDate: Date;
+    createdAt: Date;
+    updatedAt: Date;
   };
-  error?: string;
-  status: number;
+  brand: {
+    id: string;
+    name: string;
+    user: {
+      name: string | null;
+      email: string | null;
+      image: string | null;
+    };
+  };
+}
+
+interface CampaignMetric {
+  id: string;
+  followers: number;
+  likes: number;
+  comments: number;
+  shares: number;
+  saves: number;
+  views: number | null;
+  engagementRate: number;
+  metricType: string;
+  recordedAt: Date;
+  influencerPlatform: {
+    username: string;
+    platform: {
+      name: string;
+    };
+  };
 }
 
 interface Props {
   id: string;
 }
 
-const influencerData = {
+// Mock data - consider moving to a separate file or API
+const MOCK_INFLUENCER_DATA = {
   id: "inf_001",
   name: "Sarah Michelle",
   username: "@sarahmichelle",
@@ -47,8 +102,6 @@ const influencerData = {
   isVerified: true,
   rating: 4.8,
   totalReviews: 127,
-
-  // Social Media Stats
   socialMedia: {
     instagram: {
       followers: 2500000,
@@ -71,8 +124,6 @@ const influencerData = {
       engagement: 12.3
     }
   },
-
-  // Performance Metrics
   metrics: {
     reachRate: 92,
     engagementRate: 8.5,
@@ -80,8 +131,6 @@ const influencerData = {
     completionRate: 98,
     onTimeDelivery: 96
   },
-
-  // Recent Campaigns
   recentCampaigns: [
     {
       id: "camp_001",
@@ -111,8 +160,6 @@ const influencerData = {
       completedAt: null
     }
   ],
-
-  // Pricing
   pricing: {
     instagramPost: 15000000,
     instagramStory: 8000000,
@@ -120,22 +167,14 @@ const influencerData = {
     tiktokVideo: 12000000,
     packageDeal: 45000000
   },
-
-  // Contact Info
   contact: {
     email: "sarah.michelle@email.com",
     phone: "+62 812-3456-7890",
     manager: "Tidak ada",
     agency: "Tidak Ada"
   },
-
-  // Specialties
   specialties: ["Fashion", "Beauty", "Lifestyle", "Travel", "Food & Beverage"],
-
-  // Languages
   languages: ["Bahasa Indonesia", "English", "Mandarin"],
-
-  // Audience Demographics
   audienceDemographics: {
     ageGroups: [
       { range: "18-24", percentage: 35 },
@@ -157,18 +196,36 @@ const influencerData = {
   }
 };
 
-export default function InfluencerDetailClient({ id }: Props) {
-  const [influencer, setInfluencer] = useState<Influencer | null>(null);
+const getTierColor = (tier: string): string => {
+  switch (tier) {
+    case 'Mega Influencer':
+      return 'bg-purple-100 text-purple-800 border-purple-200';
+    case 'Macro Influencer':
+      return 'bg-blue-100 text-blue-800 border-blue-200';
+    case 'Micro Influencer':
+      return 'bg-green-100 text-green-800 border-green-200';
+    default:
+      return 'bg-gray-100 text-gray-800 border-gray-200';
+  }
+};
+
+export default function InfluencerPageById({ id }: Props) {
+  const [influencer, setInfluencer] = useState<any>(null);
+  const [platforms, setPlatforms] = useState<Platform[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [activeCampaigns, setActiveCampaigns] = useState<ActiveCampaign[]>([]);
+  const [selectedCampaignMetrics, setSelectedCampaignMetrics] = useState<CampaignMetric[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
+  const [metricsLoading, setMetricsLoading] = useState<boolean>(false);
+  const [isFollowing, ] = useState(false);
 
   const router = useRouter();
 
-  const [activeTab, setActiveTab] = useState('overview');
-  const [isFollowing, setIsFollowing] = useState(false);
-
-  const formatNumber = (num: number): string => {
+  const formatNumber = (num: number | null): string => {
+    if (!num) return '0';
     if (num >= 1000000) {
       return (num / 1000000).toFixed(1) + 'M';
     } else if (num >= 1000) {
@@ -177,87 +234,121 @@ export default function InfluencerDetailClient({ id }: Props) {
     return num.toString();
   };
 
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('id-ID', {
+  const formatDate = (date: Date | string): string => {
+    return new Date(date).toLocaleDateString('id-ID', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     });
   };
 
-  const getTierColor = (tier: string): string => {
-    switch (tier) {
-      case 'Mega Influencer':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'Macro Influencer':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'Micro Influencer':
-        return 'bg-green-100 text-green-800 border-green-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
   const getStatusColor = (status: string): string => {
     switch (status) {
-      case 'Completed':
+      case 'COMPLETED':
         return 'bg-green-100 text-green-800';
-      case 'Active':
+      case 'ACTIVE':
         return 'bg-blue-100 text-blue-800';
-      case 'Pending':
+      case 'PENDING':
         return 'bg-yellow-100 text-yellow-800';
+      case 'REJECTED':
+        return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
 
+  const getPlatformIcon = (platformName: string) => {
+    switch (platformName.toLowerCase()) {
+      case 'instagram':
+        return <FaInstagram className="w-5 h-5" />;
+      case 'youtube':
+        return <FaYoutube className="w-5 h-5" />;
+      case 'tiktok':
+        return <FaTiktok className="w-5 h-5" />;
+      case 'facebook':
+        return <FaFacebook className="w-5 h-5" />;
+      case 'twitter':
+        return <FaTwitter className="w-5 h-5" />;
+      default:
+        return <Globe className="w-5 h-5" />;
+    }
+  };
 
-  // Fetch influencer data
+  // Fetch influencer data and platforms
   useEffect(() => {
-    const fetchInfluencer = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        const response: ApiResponse = await getInfluencerById(id);
-        console.log("detail page:", response)
+        const [platformResponse, campaignsResponse] = await Promise.all([
+          getInfluencerPlatformData(id),
+          getInfluencerActiveCampaigns(id)
+        ]);
 
-        // Handle response berdasarkan struktur yang benar
-        if (response.error) {
-          setError(response.error);
+        if (platformResponse.error) {
+          setError(platformResponse.message);
           return;
         }
 
-        if (!response.data || !response.data.user) {
-          setError('Influencer tidak ditemukan');
+        if (!platformResponse.data) {
+          setError('Data influencer tidak ditemukan');
           return;
         }
 
-        setInfluencer(response.data.user);
-        setCategories(response.data.categories || [])
+        setInfluencer(platformResponse.data.user);
+        setPlatforms(platformResponse.data.platforms || []);
+        setCategories(platformResponse.data.categories || []);
+
+        if (campaignsResponse.success && campaignsResponse.data) {
+          setActiveCampaigns(campaignsResponse.data);
+        }
 
       } catch (err) {
-        console.error('Error fetching influencer:', err);
-        setError(err instanceof Error ? err.message : 'Terjadi kesalahan saat mengambil data');
+        console.error('Error fetching data:', err);
+        setError('Terjadi kesalahan saat mengambil data');
       } finally {
         setLoading(false);
       }
     };
 
     if (id) {
-      fetchInfluencer();
+      fetchData();
     }
   }, [id]);
 
-  // Loading state
+  // Fetch campaign metrics when campaign is selected
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      if (!selectedCampaign || !id) return;
+
+      try {
+        setMetricsLoading(true);
+        const response = await getInfluencerCampaignMetrics(id, selectedCampaign);
+
+        if (response.success && response.data) {
+          setSelectedCampaignMetrics(response.data);
+        }
+      } catch (error) {
+        console.error('Error fetching metrics:', error);
+      } finally {
+        setMetricsLoading(false);
+      }
+    };
+
+    fetchMetrics();
+  }, [selectedCampaign, id]);
+
+  // Calculate total followers across platforms
+  const totalFollowers = platforms.reduce((total, platform) => {
+    return total + (platform.followers || 0);
+  }, 0);
+
+  // Calculate average engagement rate
+  const averageEngagement = platforms.length > 0
+    ? platforms.reduce((total, platform) => total + (platform.engagementRate || 0), 0) / platforms.length
+    : 0;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
@@ -269,27 +360,19 @@ export default function InfluencerDetailClient({ id }: Props) {
     );
   }
 
-  // Error state
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <Card className="p-8 text-center">
           <p className="text-red-600 mb-4">Error: {error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
+          <Button onClick={() => window.location.reload()}>
             Coba Lagi
-          </button>
+          </Button>
         </Card>
       </div>
     );
   }
 
-  // variable influencer this is table user
-  console.log("detail data influencer:", influencer)
-
-  // Success state
   if (!influencer) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
@@ -317,7 +400,7 @@ export default function InfluencerDetailClient({ id }: Props) {
           <div
             className="h-48 bg-gradient-to-r from-pink-400 via-purple-500 to-indigo-600 relative"
             style={{
-              backgroundImage: `url(${influencer.image})`,
+              backgroundImage: influencer.image ? `url(${influencer.image})` : undefined,
               backgroundSize: 'cover',
               backgroundPosition: 'center'
             }}
@@ -327,28 +410,28 @@ export default function InfluencerDetailClient({ id }: Props) {
 
           <CardContent className="relative">
             <div className="flex flex-col lg:flex-row gap-6 -mt-16 relative z-10">
-
               {/* Avatar */}
               <div className="flex-shrink-0">
-                <img
-                  src={influencer.image || influencerData.avatar}
-                  alt={influencer.name || influencerData.name}
+                <Image
+                  src={influencer.image || MOCK_INFLUENCER_DATA.avatar}
+                  alt={influencer.name || MOCK_INFLUENCER_DATA.name}
                   className="w-32 h-32 rounded-full border-4 border-white shadow-xl object-cover"
+                  width={1000}
+                  height={1000}
                 />
               </div>
 
-              {/* Detail */}
+              {/* Details */}
               <div className="flex-1 pt-16 lg:pt-4">
                 <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-
                   {/* Left Info */}
                   <div>
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="flex items-center gap-3 mb-6">
                       <span className="bg-white text-gray-900 text-2xl font-semibold px-4 py-1 rounded shadow-sm">
                         {influencer.name}
                       </span>
 
-                      {influencerData.isVerified && (
+                      {MOCK_INFLUENCER_DATA.isVerified && (
                         <Badge className="bg-blue-100 text-blue-800 border-blue-200">
                           <Award className="w-3 h-3 mr-1" />
                           Verified
@@ -356,10 +439,10 @@ export default function InfluencerDetailClient({ id }: Props) {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-6 text-sm text-gray-600 mb-4">
+                    <div className="flex items-center gap-6 text-sm text-gray-600 mb-4 flex-wrap">
                       <div className="flex items-center gap-1">
                         <MapPin className="w-4 h-4" />
-                        <span>{influencerData.location}</span>
+                        <span>{MOCK_INFLUENCER_DATA.location}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
@@ -369,22 +452,23 @@ export default function InfluencerDetailClient({ id }: Props) {
                       </div>
                       <div className="flex items-center gap-1">
                         <Star className="w-4 h-4 text-yellow-500" />
-                        <span>{influencerData.rating}/5 ({influencerData.totalReviews} reviews)</span>
+                        <span>{MOCK_INFLUENCER_DATA.rating}/5 ({MOCK_INFLUENCER_DATA.totalReviews} reviews)</span>
                       </div>
                     </div>
 
-                    <Badge className={`${getTierColor(influencerData.tier)} mb-4`}>
+                    <Badge className={`${getTierColor(MOCK_INFLUENCER_DATA.tier)} mb-4`}>
                       <TrendingUp className="w-3 h-3 mr-1" />
-                      {influencerData.tier}
+                      {MOCK_INFLUENCER_DATA.tier}
                     </Badge>
 
-                    <p className="text-gray-700 max-w-2xl">{influencerData.bio}</p>
+                    <p className="text-gray-700 max-w-2xl">{MOCK_INFLUENCER_DATA.bio}</p>
                   </div>
 
                   {/* Right Actions */}
-                  <div className="flex gap-3">
+                  <div className="flex gap-3 flex-wrap">
                     <Button
-                      onClick={() => setIsFollowing(!isFollowing)}
+                      onClick={() =>
+                        (!isFollowing)}
                       className={isFollowing ? "bg-gray-200 text-gray-800 hover:bg-gray-300" : "bg-blue-600 hover:bg-blue-700"}
                     >
                       {isFollowing ? 'Following' : 'Follow'}
@@ -406,19 +490,14 @@ export default function InfluencerDetailClient({ id }: Props) {
           </CardContent>
         </Card>
 
-
-        {/* Stats Overview */}
+{/* Platform Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="border-0 shadow-lg bg-gradient-to-r from-pink-500 to-purple-600 text-white">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-pink-100">Total Followers</p>
-                  <p className="text-3xl font-bold">
-                    {formatNumber(influencerData.socialMedia.instagram.followers +
-                      influencerData.socialMedia.youtube.subscribers +
-                      influencerData.socialMedia.tiktok.followers)}
-                  </p>
+                  <p className="text-3xl font-bold">{formatNumber(totalFollowers)}</p>
                 </div>
                 <Users className="w-12 h-12 text-pink-200" />
               </div>
@@ -430,7 +509,7 @@ export default function InfluencerDetailClient({ id }: Props) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-blue-100">Avg Engagement</p>
-                  <p className="text-3xl font-bold">{influencerData.metrics.engagementRate}%</p>
+                  <p className="text-3xl font-bold">{averageEngagement.toFixed(1)}%</p>
                 </div>
                 <Heart className="w-12 h-12 text-blue-200" />
               </div>
@@ -441,10 +520,12 @@ export default function InfluencerDetailClient({ id }: Props) {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-green-100">Completion Rate</p>
-                  <p className="text-3xl font-bold">{influencerData.metrics.completionRate}%</p>
+                  <p className="text-green-100">Campaigns Aktif</p>
+                  <p className="text-3xl font-bold">
+                    {activeCampaigns.filter(c => c.campaign.status === 'ACTIVE').length}
+                  </p>
                 </div>
-                <Target className="w-12 h-12 text-green-200" />
+                <Activity className="w-12 h-12 text-green-200" />
               </div>
             </CardContent>
           </Card>
@@ -453,10 +534,10 @@ export default function InfluencerDetailClient({ id }: Props) {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-orange-100">Response Rate</p>
-                  <p className="text-3xl font-bold">{influencerData.metrics.responseRate}%</p>
+                  <p className="text-orange-100">Campaign Selesai</p>
+                  <p className="text-3xl font-bold">{activeCampaigns.filter(c => c.campaign.status === 'COMPLETED').length}</p>
                 </div>
-                <Zap className="w-12 h-12 text-orange-200" />
+                <Globe className="w-12 h-12 text-orange-200" />
               </div>
             </CardContent>
           </Card>
@@ -468,10 +549,9 @@ export default function InfluencerDetailClient({ id }: Props) {
             <div className="flex flex-wrap gap-2">
               {[
                 { id: 'overview', label: 'Overview', icon: User },
-                { id: 'social', label: 'Social Media', icon: FaInstagram },
-                { id: 'campaigns', label: 'Campaigns', icon: BarChart3 },
-                { id: 'pricing', label: 'Pricing', icon: DollarSign },
-                { id: 'audience', label: 'Audience', icon: Users }
+                { id: 'platforms', label: 'Platforms', icon: Globe },
+                { id: 'campaigns', label: 'Active Campaigns', icon: BarChart3 },
+                { id: 'metrics', label: 'Campaign Metrics', icon: TrendingUp }
               ].map((tab) => (
                 <Button
                   key={tab.id}
@@ -488,6 +568,291 @@ export default function InfluencerDetailClient({ id }: Props) {
         </Card>
 
         {/* Tab Content */}
+        {activeTab === 'platforms' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {platforms.map((platform) => (
+              <Card key={platform.id} className="border-0 shadow-lg bg-white/90 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3">
+                    {getPlatformIcon(platform.platform.name)}
+                    <span>{platform.platform.name}</span>
+                    {/**
+                                        {platform.isVerified && (
+                                            <Badge className="bg-blue-100 text-blue-800">
+                                                <CheckCircle className="w-3 h-3 mr-1" />
+                                                Verified
+                                            </Badge>
+                                        )}
+                                             */}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <span>@{platform.username}</span>
+                    {/**
+                                        {platform.profileUrl && (
+                                            <a
+                                                href={platform.profileUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-blue-600 hover:text-blue-800"
+                                            >
+                                                <ExternalLink className="w-4 h-4" />
+                                            </a>
+                                        )}
+                                             */}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-3 bg-gray-50 rounded-lg">
+                      <p className="text-2xl font-bold text-gray-900">
+                        {formatNumber(platform.followers)}
+                      </p>
+                      <p className="text-sm text-gray-600">Followers</p>
+                    </div>
+                    <div className="text-center p-3 bg-gray-50 rounded-lg">
+                      <p className="text-2xl font-bold text-gray-900">
+                        {platform.engagementRate?.toFixed(1) || '0'}%
+                      </p>
+                      <p className="text-sm text-gray-600">Engagement</p>
+                    </div>
+                    <div className="text-center p-3 bg-gray-50 rounded-lg">
+                      <p className="text-2xl font-bold text-gray-900">
+                        {formatNumber(platform.posts)}
+                      </p>
+                      <p className="text-sm text-gray-600">Posts</p>
+                    </div>
+                    <div className="text-center p-3 bg-gray-50 rounded-lg">
+                      <p className="text-2xl font-bold text-gray-900">
+                        {formatNumber(platform.views)}
+                      </p>
+                      <p className="text-sm text-gray-600">Views</p>
+                    </div>
+                  </div>
+
+                  {/* Additional metrics */}
+                  <div className="border-t pt-4">
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Likes:</span>
+                        <span className="font-medium">{formatNumber(platform.likesCount)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Comments:</span>
+                        <span className="font-medium">{formatNumber(platform.commentsCount)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Shares:</span>
+                        <span className="font-medium">{formatNumber(platform.sharesCount)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Saves:</span>
+                        <span className="font-medium">{formatNumber(platform.savesCount)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {activeTab === 'campaigns' && (
+          <Card className="border-0 shadow-lg bg-white/90 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5" />
+                Active & Recent Campaigns ({activeCampaigns.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {activeCampaigns.length === 0 ? (
+                <div className="text-center py-12">
+                  <Activity className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                  <p className="text-gray-600">Belum ada campaign yang diikuti</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {activeCampaigns.map((invitation) => (
+                    <div
+                      key={invitation.id}
+                      className="border rounded-lg p-6 hover:bg-gray-50 transition-colors cursor-pointer"
+                      onClick={() => setSelectedCampaign(invitation.campaign.id)}
+                    >
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-3">
+                            <h3 className="font-semibold text-lg">{invitation.campaign.name}</h3>
+                            <Badge className={getStatusColor(invitation.campaign.status)}>
+                              {invitation.campaign.status}
+                            </Badge>
+                            {/**
+                            <Badge className={getStatusColor(invitation.status)}>
+                              {invitation.status}
+                            </Badge>
+                             */}
+                          </div>
+
+                          <p className="text-gray-600 mb-2">
+                            Brand: {invitation.brand.name}
+                          </p>
+
+                          {invitation.campaign.goal && (
+                            <p className="text-gray-600 mb-3">
+                              Tujuan Campaign: {invitation.campaign.goal}
+                            </p>
+                          )}
+
+                          <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="w-4 h-4" />
+                              <span>
+                                {formatDate(invitation.campaign.startDate)} - {formatDate(invitation.campaign.endDate)}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-4 h-4" />
+                              <span>
+                                Invited: {formatDate(invitation.invitedAt)}
+                              </span>
+                            </div>
+                            {invitation.respondedAt && (
+                              <div className="flex items-center gap-1">
+                                <CheckCircle className="w-4 h-4 text-green-600" />
+                                <span>
+                                  Responded: {formatDate(invitation.respondedAt)}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                            {/** non-active message 
+                          {invitation.responseMessage && (
+                            <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                              <p className="text-sm text-blue-800">
+                                <strong>Response:</strong> {invitation.responseMessage}
+                              </p>
+                            </div>
+                          )}
+                            */}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedCampaign(invitation.campaign.id);
+                              setActiveTab('metrics');
+                            }}
+                          >
+                            View Metrics
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {activeTab === 'metrics' && (
+          <div className="space-y-6">
+            {/* Campaign Selection */}
+            <Card className="border-0 shadow-lg bg-white/90 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle>Pilih Campaign untuk Lihat Metrics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {activeCampaigns.map((invitation) => (
+                    <Button
+                      key={invitation.campaign.id}
+                      variant={selectedCampaign === invitation.campaign.id ? "default" : "outline"}
+                      onClick={() => setSelectedCampaign(invitation.campaign.id)}
+                      className="h-auto p-4 text-left justify-start"
+                    >
+                      <div>
+                        <div className="font-medium">{invitation.campaign.name}</div>
+                        <div className="text-sm opacity-70">{invitation.brand.name}</div>
+                        <Badge className={`${getStatusColor(invitation.campaign.status)} mt-1`}>
+                          {invitation.campaign.status}
+                        </Badge>
+                      </div>
+                    </Button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Metrics Result */}
+            {metricsLoading ? (
+              <div className="text-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
+                <p className="text-gray-600">Memuat metrics campaign...</p>
+              </div>
+            ) : selectedCampaign && selectedCampaignMetrics.length > 0 ? (
+              <Card className="border-0 shadow-lg bg-white/90 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle>Metrics Campaign</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full border border-gray-200 text-sm">
+                      <thead className="bg-gray-100">
+                        <tr>
+                          <th className="px-4 py-2 text-left">Tanggal</th>
+                          <th className="px-4 py-2 text-right">Followers</th>
+                          <th className="px-4 py-2 text-right">Likes</th>
+                          <th className="px-4 py-2 text-right">Comments</th>
+                          <th className="px-4 py-2 text-right">Shares</th>
+                          <th className="px-4 py-2 text-right">Saves</th>
+                          <th className="px-4 py-2 text-right">Views</th>
+                          <th className="px-4 py-2 text-right">Engagement</th>
+                          <th className="px-4 py-2 text-left">Platform</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedCampaignMetrics.map((metric) => (
+                          <tr key={metric.id} className="border-t hover:bg-gray-50">
+                            <td className="px-4 py-2">{formatDate(metric.recordedAt)}</td>
+                            <td className="px-4 py-2 text-right">{formatNumber(metric.followers)}</td>
+                            <td className="px-4 py-2 text-right">{formatNumber(metric.likes)}</td>
+                            <td className="px-4 py-2 text-right">{formatNumber(metric.comments)}</td>
+                            <td className="px-4 py-2 text-right">{formatNumber(metric.shares)}</td>
+                            <td className="px-4 py-2 text-right">{formatNumber(metric.saves)}</td>
+                            <td className="px-4 py-2 text-right">{formatNumber(metric.views)}</td>
+                            <td className="px-4 py-2 text-right">{metric.engagementRate.toFixed(1)}%</td>
+                            <td className="px-4 py-2 flex items-center gap-2">
+                              {getPlatformIcon(metric.influencerPlatform.platform.name)}
+                              <span>@{metric.influencerPlatform.username}</span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : selectedCampaign ? (
+              <Alert>
+                <AlertDescription>
+                  Belum ada data metrics untuk campaign ini.
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <Alert>
+                <AlertDescription>
+                  Silakan pilih campaign untuk melihat metrics.
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
+        )}
+
+        {/* Tab Content */}
         {activeTab === 'overview' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
@@ -501,7 +866,7 @@ export default function InfluencerDetailClient({ id }: Props) {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4">
-                    {Object.entries(influencerData.metrics).map(([key, value]) => (
+                    {Object.entries(MOCK_INFLUENCER_DATA.metrics).map(([key, value]) => (
                       <div key={key} className="text-center p-4 bg-gray-50 rounded-lg">
                         <p className="text-2xl font-bold text-gray-900">{value}%</p>
                         <p className="text-sm text-gray-600 capitalize">
@@ -513,12 +878,12 @@ export default function InfluencerDetailClient({ id }: Props) {
                 </CardContent>
               </Card>
 
-              {/* Specialties */}
+              {/* Categories */}
               <Card className="border-0 shadow-lg bg-white/90 backdrop-blur-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Award className="w-5 h-5" />
-                    Categories
+                    Kategori
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -539,7 +904,7 @@ export default function InfluencerDetailClient({ id }: Props) {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Phone className="w-5 h-5" />
-                    Contact Info
+                    Informasi Kontak
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -548,16 +913,16 @@ export default function InfluencerDetailClient({ id }: Props) {
                     <p className="font-medium">{influencer.email}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Phone</p>
-                    <p className="font-medium">{influencerData.contact.phone}</p>
+                    <p className="text-sm text-gray-600">No. Handphone</p>
+                    <p className="font-medium">{MOCK_INFLUENCER_DATA.contact.phone}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Manager</p>
-                    <p className="font-medium">{influencerData.contact.manager}</p>
+                    <p className="font-medium">{MOCK_INFLUENCER_DATA.contact.manager}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Agency</p>
-                    <p className="font-medium">{influencerData.contact.agency}</p>
+                    <p className="font-medium">{MOCK_INFLUENCER_DATA.contact.agency}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -567,12 +932,12 @@ export default function InfluencerDetailClient({ id }: Props) {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Globe className="w-5 h-5" />
-                    Languages
+                    Bahasa
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {influencerData.languages.map((language, index) => (
+                    {MOCK_INFLUENCER_DATA.languages.map((language, index) => (
                       <Badge key={index} variant="outline" className="w-full justify-center py-2">
                         {language}
                       </Badge>
@@ -584,279 +949,7 @@ export default function InfluencerDetailClient({ id }: Props) {
           </div>
         )}
 
-        {activeTab === 'social' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Instagram */}
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-pink-500 to-purple-600 text-white">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Instagram className="w-6 h-6" />
-                  Instagram
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-pink-100">Followers</p>
-                    <p className="text-2xl font-bold">{formatNumber(influencerData.socialMedia.instagram.followers)}</p>
-                  </div>
-                  <div>
-                    <p className="text-pink-100">Posts</p>
-                    <p className="text-2xl font-bold">{formatNumber(influencerData.socialMedia.instagram.posts)}</p>
-                  </div>
-                  <div>
-                    <p className="text-pink-100">Avg Likes</p>
-                    <p className="text-2xl font-bold">{formatNumber(influencerData.socialMedia.instagram.avgLikes)}</p>
-                  </div>
-                  <div>
-                    <p className="text-pink-100">Engagement</p>
-                    <p className="text-2xl font-bold">{influencerData.socialMedia.instagram.engagement}%</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* YouTube */}
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-red-500 to-red-600 text-white">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Youtube className="w-6 h-6" />
-                  YouTube
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-red-100">Subscribers</p>
-                    <p className="text-2xl font-bold">{formatNumber(influencerData.socialMedia.youtube.subscribers)}</p>
-                  </div>
-                  <div>
-                    <p className="text-red-100">Videos</p>
-                    <p className="text-2xl font-bold">{formatNumber(influencerData.socialMedia.youtube.videos)}</p>
-                  </div>
-                  <div>
-                    <p className="text-red-100">Total Views</p>
-                    <p className="text-2xl font-bold">{formatNumber(influencerData.socialMedia.youtube.views)}</p>
-                  </div>
-                  <div>
-                    <p className="text-red-100">Engagement</p>
-                    <p className="text-2xl font-bold">{influencerData.socialMedia.youtube.engagement}%</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* TikTok */}
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-gray-800 to-black text-white">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Camera className="w-6 h-6" />
-                  TikTok
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-gray-300">Followers</p>
-                    <p className="text-2xl font-bold">{formatNumber(influencerData.socialMedia.tiktok.followers)}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-300">Following</p>
-                    <p className="text-2xl font-bold">{formatNumber(influencerData.socialMedia.tiktok.following)}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-300">Total Likes</p>
-                    <p className="text-2xl font-bold">{formatNumber(influencerData.socialMedia.tiktok.likes)}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-300">Engagement</p>
-                    <p className="text-2xl font-bold">{influencerData.socialMedia.tiktok.engagement}%</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {activeTab === 'campaigns' && (
-          <Card className="border-0 shadow-lg bg-white/90 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="w-5 h-5" />
-                Recent Campaigns
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {influencerData.recentCampaigns.map((campaign) => (
-                  <div key={campaign.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="font-semibold text-lg">{campaign.campaign}</h3>
-                          <Badge className={getStatusColor(campaign.status)}>
-                            {campaign.status}
-                          </Badge>
-                        </div>
-                        <p className="text-gray-600 mb-2">Brand: {campaign.brand}</p>
-                        <div className="flex gap-6 text-sm text-gray-600">
-                          <div className="flex items-center gap-1">
-                            <Eye className="w-4 h-4" />
-                            <span>Reach: {formatNumber(campaign.reach)}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <ThumbsUp className="w-4 h-4" />
-                            <span>Engagement: {campaign.engagement}%</span>
-                          </div>
-                          {campaign.completedAt && (
-                            <div className="flex items-center gap-1">
-                              <Calendar className="w-4 h-4" />
-                              <span>Completed: {formatDate(campaign.completedAt)}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {activeTab === 'pricing' && (
-          <Card className="border-0 shadow-lg bg-white/90 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <DollarSign className="w-5 h-5" />
-                Pricing Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {Object.entries(influencerData.pricing).map(([key, value]) => (
-                  <div key={key} className="text-center p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
-                    <h3 className="font-semibold text-lg mb-2 capitalize">
-                      {key.replace(/([A-Z])/g, ' $1').trim()}
-                    </h3>
-                    <p className="text-3xl font-bold text-blue-600">{formatCurrency(value)}</p>
-                  </div>
-                ))}
-              </div>
-              <Alert className="mt-6 border-blue-200 bg-blue-50">
-                <AlertDescription className="text-blue-800">
-                  Harga dapat berubah tergantung pada kompleksitas campaign dan deliverables yang diminta.
-                  Hubungi langsung untuk mendapatkan penawaran khusus.
-                </AlertDescription>
-              </Alert>
-            </CardContent>
-          </Card>
-        )}
-
-        {activeTab === 'audience' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Age Demographics */}
-            <Card className="border-0 shadow-lg bg-white/90 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle>Age Demographics</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {influencerData.audienceDemographics.ageGroups.map((group, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <span className="font-medium">{group.range} years</span>
-                      <div className="flex items-center gap-3 flex-1 mx-4">
-                        <div className="flex-1 bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-blue-500 h-2 rounded-full transition-all duration-500"
-                            style={{ width: `${group.percentage}%` }}
-                          ></div>
-                        </div>
-                        <span className="font-bold text-blue-600">{group.percentage}%</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Gender Demographics */}
-            <Card className="border-0 shadow-lg bg-white/90 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle>Gender Demographics</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">Female</span>
-                    <div className="flex items-center gap-3 flex-1 mx-4">
-                      <div className="flex-1 bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-pink-500 h-2 rounded-full transition-all duration-500"
-                          style={{ width: `${influencerData.audienceDemographics.gender.female}%` }}
-                        ></div>
-                      </div>
-                      <span className="font-bold text-pink-600">{influencerData.audienceDemographics.gender.female}%</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">Male</span>
-                    <div className="flex items-center gap-3 flex-1 mx-4">
-                      <div className="flex-1 bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-blue-500 h-2 rounded-full transition-all duration-500"
-                          style={{ width: `${influencerData.audienceDemographics.gender.male}%` }}
-                        ></div>
-                      </div>
-                      <span className="font-bold text-blue-600">{influencerData.audienceDemographics.gender.male}%</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Top Cities */}
-            <Card className="border-0 shadow-lg bg-white/90 backdrop-blur-sm lg:col-span-2">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="w-5 h-5" />
-                  Top Cities
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {influencerData.audienceDemographics.topCities.map((city, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                          <span className="text-sm font-bold text-blue-600">{index + 1}</span>
-                        </div>
-                        <span className="font-medium">{city.city}</span>
-                      </div>
-                      <span className="font-bold text-blue-600">{city.percentage}%</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Action Buttons - Fixed at bottom */}
-        <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm mt-8">
-          <CardContent className="p-6">
-            <div className="flex flex-wrap gap-4 justify-center lg:justify-end">
-              <Button variant="outline" size="lg" className="flex items-center gap-2">
-                <Heart className="w-4 h-4" />
-                Add to Wishlist
-              </Button>
-              <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 flex items-center gap-2">
-                <MessageCircle className="w-4 h-4" />
-                Send Message
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        
       </div>
     </div>
   );

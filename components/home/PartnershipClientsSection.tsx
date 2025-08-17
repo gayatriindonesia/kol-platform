@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Star, TrendingUp, Award, Users } from 'lucide-react';
+import Image from 'next/image';
 
 interface Client {
   id: number;
@@ -86,10 +87,12 @@ const PartnershipClientsSection: React.FC<PartnershipClientsSectionProps> = ({
                         {/* Client Info */}
                         <div>
                           <div className="flex items-center mb-6">
-                            <img 
+                            <Image
                               src={client.logo} 
                               alt={client.name}
                               className="w-16 h-16 rounded-2xl object-cover mr-4 border border-slate-600"
+                              width={1000}
+                              height={1000}
                             />
                             <div>
                               <h4 className="text-2xl font-bold text-white">{client.name}</h4>
@@ -225,10 +228,12 @@ const PartnershipClientsSection: React.FC<PartnershipClientsSectionProps> = ({
               className="group bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-sm p-6 rounded-2xl border border-slate-700/30 hover:border-blue-500/50 transition-all duration-500 hover:-translate-y-2"
             >
               <div className="flex items-center mb-4">
-                <img 
+                <Image
                   src={client.logo} 
                   alt={client.name}
                   className="w-12 h-12 rounded-xl object-cover mr-3 border border-slate-600"
+                  width={1000}
+                  height={1000}
                 />
                 <div>
                   <h4 className="text-lg font-bold text-white">{client.name}</h4>
