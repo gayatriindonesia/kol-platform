@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { db } from '@/lib/db';
 import { createNotification } from '@/lib/notification.actions';
+import { CampaignMetricsService } from '@/services/campaignMetrics';
 
 export async function PATCH(
   request: NextRequest,
@@ -169,6 +170,81 @@ export async function PATCH(
     console.error('Error updating campaign:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+// Campaign Metrics Data
+const metricsService = new CampaignMetricsService();
+export async function GET(request: NextRequest) {
+  try {
+    const searchParams = request.nextUrl.searchParams;
+    const campaignId = searchParams.get("campaignId");
+    const refresh = searchParams.get("refresh") === "true";
+
+    // Validasi campaignId
+    if (!campaignId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Campaign ID is required'
+        },
+        { status: 400 }
+      );
+    }
+
+    // Coba ambil metrics yang sudah disimpan dulu
+    let metrics = await metricsService.getCampaignMetrics(campaignId);
+    
+    // Jika belum ada atau perlu refresh, hitung ulang
+    if (!metrics || refresh) {
+      metrics = await metricsService.calculateCampaignMetrics(campaignId);
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        campaignId,
+        metrics: {
+          reachRate: {
+            value: metrics.reachRate,
+            label: `${metrics.reachRate.toFixed(2)}%`,
+            description: 'Persentase reach terhadap impressions'
+          },
+          engagementRate: {
+            value: metrics.engagementRate,
+            label: `${metrics.engagementRate.toFixed(2)}%`, 
+            description: 'Persentase engagement terhadap reach'
+          },
+          responseRate: {
+            value: metrics.responseRate,
+            label: `${metrics.responseRate.toFixed(2)}%`,
+            description: 'Persentase influencer yang merespons invitation'
+          },
+          completionRate: {
+            value: metrics.completionRate,
+            label: `${metrics.completionRate.toFixed(2)}%`,
+            description: 'Persentase deliverables yang selesai'
+          },
+          onTimeDeliveryRate: {
+            value: metrics.onTimeDeliveryRate,
+            label: `${metrics.onTimeDeliveryRate.toFixed(2)}%`,
+            description: 'Persentase deliverables yang tepat waktu'
+          }
+        },
+        rawData: metrics.rawData
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching campaign metrics:', error);
+    
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to fetch campaign metrics'
+      },
       { status: 500 }
     );
   }

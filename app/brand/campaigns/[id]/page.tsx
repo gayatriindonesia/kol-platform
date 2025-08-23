@@ -2,6 +2,7 @@ import React, { Suspense } from 'react';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getCampaignById, checkCampaignExpiry } from '@/lib/campaign.actions';
+import { getMOUByCampaignId } from '@/lib/mou.actions'; // Add this import
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -9,15 +10,17 @@ import { AlertTriangle, Clock } from 'lucide-react';
 import CampaignDetailId from '@/components/brand/Campaign/CampaignDetailId';
 import CampaignListInfluencer from '@/components/brand/Campaign/CampaignListInfluencer';
 import BackButton from '@/components/brand/BackButton';
+import { auth } from '@/auth';
+import { db } from '@/lib/db';
+import MOURequestComponent from '@/components/brand/Mou/RequestMou';
 
-// Types
+// Types - Updated to match actual database structure
 interface Campaign {
     id: string;
-    name?: string;
+    name: string;
     goal?: string | null;
     bankId?: string | null;
-    status?: 'PENDING' | 'ACTIVE' | 'REJECTED' | 'COMPLETED' | 'CANCELLED';
-    description?: string;
+    status: 'PENDING' | 'ACTIVE' | 'REJECTED' | 'COMPLETED' | 'CANCELLED';
     target?: string;
     type?: string;
     budget?: number;
@@ -36,8 +39,47 @@ interface Campaign {
         updatedAt: Date;
         userId: string;
     };
+    mouRequired: boolean;
+    canStartWithoutMOU: boolean;
+    // Add MOU relation fields
+    mou?: {
+        id: string;
+        status: string;
+        brandApprovalStatus: string;
+        influencerApprovalStatus: string;
+        adminApprovalStatus: string;
+        createdAt: Date;
+        mouNumber: string;
+    } | null;
+    // Match the exact structure expected by MOURequestComponent
+    CampaignInvitation?: Array<{
+        id: string;
+        campaignId: string;
+        influencerId: string;
+        status: string;
+        message?: string | null;
+        responseMessage?: string | null;
+        invitedAt: Date;
+        respondedAt?: Date | null;
+        brandId: string;
+        createdAt: Date;
+        updatedAt: Date;
+        mouCreationRequested?: boolean;
+        mouCreatedAt?: Date | null;
+        mouCreatedBy?: string | null;
+        influencer: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            userId: string;
+            user: {
+                id: string;
+                name: string | null;
+                email: string | null;
+            };
+        };
+    }>;
 }
-
 
 interface CampaignResponse {
     success: boolean;
@@ -59,13 +101,14 @@ export async function generateMetadata({ params }: CampaignDetailPageProps): Pro
     try {
         const campaignResponse: CampaignResponse = await getCampaignById(id);
         const campaign = campaignResponse?.campaign;
+        console.log("respon data", campaign)
 
         return {
             title: campaign?.name
                 ? `${campaign.name} - Campaign Detail`
                 : 'Campaign Detail',
-            description: campaign?.description
-                ? `${campaign.description.substring(0, 160)}...`
+            description: campaign?.goal
+                ? `${campaign.goal.substring(0, 160)}...`
                 : 'View campaign details and manage influencers',
         };
     } catch {
@@ -153,7 +196,6 @@ const isValidCampaignId = (id: string): boolean => {
     );
 };
 
-
 const isCampaignExpired = (endDate: string | Date): boolean => {
     const end = new Date(endDate);
     const now = new Date();
@@ -204,10 +246,26 @@ const CampaignDetailPage = async ({ params }: CampaignDetailPageProps) => {
     }
 
     try {
-        // Fetch campaign data
+        // Get session to determine user role
+        const session = await auth();
+        if (!session?.user?.id) {
+            notFound();
+        }
+
+        // Get user role
+        const user = await db.user.findUnique({
+            where: { id: session.user.id },
+            select: { role: true }
+        });
+
+        if (!user) {
+            notFound();
+        }
+
+        // Fetch campaign data first
         const campaignResponse: CampaignResponse = await getCampaignById(id);
 
-        // Handle API response errors
+        // Handle API response errors for campaign
         if (!campaignResponse) {
             throw new Error('No response received from campaign service');
         }
@@ -240,18 +298,38 @@ const CampaignDetailPage = async ({ params }: CampaignDetailPageProps) => {
         // Process campaign data
         let campaign = campaignResponse.campaign;
 
-        // Log campaign data for debugging (remove in production)
-        if (process.env.NODE_ENV === 'development') {
-            console.log('Campaign data fetched:', {
-                id: campaign.id,
-                name: campaign.name,
-                status: campaign.status,
-                endDate: campaign.endDate
-            });
+        // Try to fetch MOU data separately (optional, don't fail if MOU doesn't exist)
+        try {
+            const mouResponse = await getMOUByCampaignId(id);
+            if (mouResponse.success && mouResponse.data) {
+                campaign = {
+                    ...campaign,
+                    mou: {
+                        id: mouResponse.data.id,
+                        status: mouResponse.data.status,
+                        brandApprovalStatus: mouResponse.data.brandApprovalStatus,
+                        influencerApprovalStatus: mouResponse.data.influencerApprovalStatus,
+                        adminApprovalStatus: mouResponse.data.adminApprovalStatus,
+                        createdAt: mouResponse.data.createdAt,
+                        mouNumber: mouResponse.data.mouNumber
+                    }
+                };
+            }
+        } catch (mouError) {
+            // Don't fail the entire page if MOU fetch fails
+            console.warn('Failed to fetch MOU data:', mouError);
         }
+
+        console.log(campaign, "ini data detail campaign with MOU")
 
         // Handle campaign expiry check
         campaign = await handleCampaignExpiryCheck(campaign);
+
+        const showMOUComponent = (
+            user.role === 'BRAND' || 
+            user.role === 'INFLUENCER' || 
+            user.role === 'ADMIN'
+        ) && campaign.status === 'ACTIVE';
 
         // Render success state
         return (
@@ -260,6 +338,57 @@ const CampaignDetailPage = async ({ params }: CampaignDetailPageProps) => {
                     <div>
                         <CampaignDetailId campaign={campaign} />
                     </div>
+
+                    {/* MOU Request Section */}
+                    {showMOUComponent && campaign.mouRequired && (
+                        <div className="container mx-auto px-4 py-6 max-w-6xl">
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                <div className="lg:col-span-2">
+                                    {/* MOU Details Display */}
+                                    {campaign.mou && (
+                                        <Card className="mb-6">
+                                            <CardContent className="p-6">
+                                                <h3 className="text-lg font-semibold mb-4">MOU Information</h3>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                                    <div>
+                                                        <span className="font-medium">MOU Number:</span>
+                                                        <p className="text-gray-600">{campaign.mou.mouNumber}</p>
+                                                    </div>
+                                                    <div>
+                                                        <span className="font-medium">Status:</span>
+                                                        <p className="text-gray-600">{campaign.mou.status}</p>
+                                                    </div>
+                                                    <div>
+                                                        <span className="font-medium">Brand Approval:</span>
+                                                        <p className="text-gray-600">{campaign.mou.brandApprovalStatus}</p>
+                                                    </div>
+                                                    <div>
+                                                        <span className="font-medium">Influencer Approval:</span>
+                                                        <p className="text-gray-600">{campaign.mou.influencerApprovalStatus}</p>
+                                                    </div>
+                                                    <div>
+                                                        <span className="font-medium">Admin Approval:</span>
+                                                        <p className="text-gray-600">{campaign.mou.adminApprovalStatus}</p>
+                                                    </div>
+                                                    <div>
+                                                        <span className="font-medium">Created:</span>
+                                                        <p className="text-gray-600">{new Date(campaign.mou.createdAt).toLocaleDateString()}</p>
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    )}
+                                </div>
+                                <div className="lg:col-span-1">
+                                    <MOURequestComponent
+                                        campaign={campaign}
+                                        userRole={user.role as 'BRAND' | 'INFLUENCER' | 'ADMIN'}
+                                        userId={session.user.id}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="w-full px-4 py-8">
                         <section aria-label="Campaign Influencers">

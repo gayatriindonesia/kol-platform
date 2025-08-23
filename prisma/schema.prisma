@@ -95,6 +95,14 @@ model Campaign {
   CampaignInvitation  CampaignInvitation[]
   metrics             InfluencerPlatformMetric[]   // snapshot metrics untuk campaign ini
   snapshots           CampaignMetricSnapshot[]     // frozen metrics saat campaign berakhir
+  performance          CampaignPerformance?
+  deliverables         CampaignDeliverable[]
+
+  mou                    MOU?              // One-to-one relation dengan MOU
+  
+  // Status enhancement untuk MOU flow
+  mouRequired            Boolean           @default(true)   // Apakah campaign ini butuh MOU
+  canStartWithoutMOU     Boolean           @default(false)  // Emergency bypass untuk campaign urgent
 
   // Payment
   paymentMethodId    String?         
@@ -110,10 +118,14 @@ model Influencer {
   userId             String               @unique
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
-  CampaignInvitation CampaignInvitation[]
-  user               User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  categories         InfluencerCategory[]
-  platforms          InfluencerPlatform[]
+  
+  // Relations
+  categories          InfluencerCategory[]
+  platforms           InfluencerPlatform[]
+  deliverables        CampaignDeliverable[]
+  CampaignInvitation  CampaignInvitation[]
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
 }
 
 model Category {
@@ -175,6 +187,7 @@ model InfluencerPlatform {
   @@unique([influencerId, platformId])
 }
 
+// untuk historical metrics per platform (followers, likes, comments, engagement rate, dll).
 model InfluencerPlatformMetric {
   id                     String               @id @default(cuid())
   influencerPlatformId   String
@@ -204,6 +217,7 @@ model InfluencerPlatformMetric {
   @@index([influencerPlatformId, recordedAt])
 }
 
+// untuk membekukan data performa saat campaign start & end (supaya bisa dihitung growth).
 model CampaignMetricSnapshot {
   id                     String    @id @default(cuid())
   campaignId             String
@@ -225,6 +239,86 @@ model CampaignMetricSnapshot {
   
   @@unique([campaignId, influencerId, platformId])
   @@index([campaignId])
+}
+
+// Tambahan untuk schema Prisma yang sudah ada
+
+// Model untuk tracking deliverables campaign
+model CampaignDeliverable {
+  id                     String                    @id @default(cuid())
+  campaignId             String
+  influencerId           String
+  title                  String                    // "Instagram Post", "Story", "Reel"
+  description            String?
+  requiredCount          Int                       @default(1)
+  deliveredCount         Int                       @default(0)
+  dueDate                DateTime
+  status                 DeliverableStatus         @default(PENDING)
+  createdAt              DateTime                  @default(now())
+  updatedAt              DateTime                  @updatedAt
+
+  campaign               Campaign                  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  influencer             Influencer                @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+  submissions            DeliverableSubmission[]
+
+  @@unique([campaignId, influencerId, title])
+}
+
+model DeliverableSubmission {
+  id                     String                    @id @default(cuid())
+  deliverableId          String
+  url                    String?                   // URL post/content
+  submittedAt            DateTime                  @default(now())
+  approvedAt             DateTime?
+  rejectedAt             DateTime?
+  feedback               String?
+  reachCount             Int?                      // actual reach dari post ini
+  impressions            Int?                      // impressions dari post ini
+  engagementCount        Int?                      // total engagement (likes + comments + shares)
+  
+  deliverable            CampaignDeliverable       @relation(fields: [deliverableId], references: [id], onDelete: Cascade)
+}
+
+// Enhanced CampaignInvitation untuk response tracking
+// Tambah field ini ke model CampaignInvitation yang sudah ada:
+// sentViaEmail         Boolean   @default(false)
+// sentViaPlatform      Boolean   @default(false)  
+// viewedAt             DateTime?
+// firstContactAt       DateTime?
+
+// Model untuk campaign performance summary
+model CampaignPerformance {
+  id                     String    @id @default(cuid())
+  campaignId             String    @unique
+  campaign               Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  
+  // Reach Metrics
+  totalReach             Int       @default(0)
+  totalImpressions       Int       @default(0)
+  avgReachRate           Float     @default(0)
+  
+  // Engagement Metrics  
+  totalEngagements       Int       @default(0)
+  avgEngagementRate      Float     @default(0)
+  
+  // Response Metrics
+  totalInvitations       Int       @default(0)
+  totalResponses         Int       @default(0)
+  responseRate           Float     @default(0)
+  
+  // Completion Metrics
+  totalDeliverables      Int       @default(0)
+  completedDeliverables  Int       @default(0)
+  completionRate         Float     @default(0)
+  
+  // On-Time Delivery
+  onTimeDeliveries       Int       @default(0)
+  lateDeliveries         Int       @default(0)
+  onTimeDeliveryRate     Float     @default(0)
+  
+  // Summary dates
+  calculatedAt           DateTime  @default(now())
+  lastUpdated            DateTime  @updatedAt
 }
 
 model Service {
@@ -297,6 +391,10 @@ model CampaignInvitation {
   brand           Brand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
   campaign        Campaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   influencer      Influencer     @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+  // MOU tracking
+  mouCreationRequested   Boolean           @default(false)
+  mouCreatedAt           DateTime?
+  mouCreatedBy           String?           // User ID yang request MOU creation
 
   @@unique([campaignId, influencerId])
 }
@@ -344,6 +442,150 @@ model Bank {
   @@unique([paymentMethodId, name])
 }
 
+// Tambahan untuk fitur MOU
+model MOU {
+  id                    String            @id @default(cuid())
+  campaignId            String            @unique
+  campaign              Campaign          @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  
+  // Basic Information
+  mouNumber             String            @unique // Auto-generated MOU number
+  title                 String
+  description           String?
+  
+  // Parties Information
+  brandName             String            // Nama brand/company
+  brandAddress          String?
+  brandRepresentative   String            // PIC dari brand
+  brandEmail            String
+  brandPhone            String?
+  
+  influencerName        String            // Nama influencer
+  influencerAddress     String?
+  influencerEmail       String
+  influencerPhone       String?
+  influencerTaxId       String?           // NPWP untuk influencer
+  
+  // Campaign Details in MOU
+  campaignObjective     String            // Tujuan campaign
+  campaignScope         String            // Ruang lingkup kerja sama
+  deliverableDetails    Json              // Detail deliverables dalam format JSON
+  
+  // Timeline
+  effectiveDate         DateTime          // Tanggal mulai berlaku
+  expiryDate           DateTime          // Tanggal berakhir
+  
+  // Financial Terms
+  totalBudget          Int               // Total budget campaign
+  paymentTerms         String            // Term pembayaran (50% DP, 50% setelah selesai, dll)
+  paymentSchedule      Json?             // Jadwal pembayaran dalam JSON
+  
+  // Legal Terms
+  termsAndConditions   String            // Syarat dan ketentuan
+  cancellationClause   String?           // Klausul pembatalan
+  confidentialityClause String?          // Klausul kerahasiaan
+  intellectualProperty  String?          // Hak kekayaan intelektual
+  
+  // Status & Approval Flow
+  status               MOUStatus         @default(DRAFT)
+  brandApprovalStatus  ApprovalStatus    @default(PENDING)
+  brandApprovedAt      DateTime?
+  brandApprovedBy      String?           // User ID yang approve dari brand
+  brandRejectionReason String?
+  
+  influencerApprovalStatus ApprovalStatus @default(PENDING) 
+  influencerApprovedAt DateTime?
+  influencerApprovedBy String?           // User ID yang approve dari influencer
+  influencerRejectionReason String?
+  
+  adminApprovalStatus  ApprovalStatus    @default(PENDING)
+  adminApprovedAt      DateTime?
+  adminApprovedBy      String?           // User ID admin yang approve
+  adminRejectionReason String?
+  
+  // Document Management
+  documentPath         String?           // Path ke file MOU yang sudah ditandatangani
+  digitalSignature     Json?             // Data tanda tangan digital
+  
+  // Revision Management
+  version              Int               @default(1)
+  parentMOUId          String?           // Untuk tracking revision
+  parentMOU            MOU?              @relation("MOURevision", fields: [parentMOUId], references: [id])
+  revisions            MOU[]             @relation("MOURevision")
+  revisionNotes        String?           // Catatan revisi
+  
+  // Audit Trail
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  createdBy            String            // User ID yang membuat MOU
+  
+  // Relations
+  approvals            MOUApproval[]
+  amendments           MOUAmendment[]
+  
+  @@index([status, createdAt])
+  @@index([campaignId])
+}
+
+// Model untuk tracking approval history
+model MOUApproval {
+  id          String         @id @default(cuid())
+  mouId       String
+  mou         MOU            @relation(fields: [mouId], references: [id], onDelete: Cascade)
+  
+  approverRole UserRole      // BRAND, INFLUENCER, ADMIN
+  approverUserId String
+  status      ApprovalStatus
+  comments    String?
+  approvedAt  DateTime       @default(now())
+  
+  @@index([mouId, approverRole])
+}
+
+// Model untuk amendment/addendum MOU
+model MOUAmendment {
+  id            String    @id @default(cuid())
+  mouId         String
+  mou           MOU       @relation(fields: [mouId], references: [id], onDelete: Cascade)
+  
+  amendmentNumber Int     // Amendment ke-berapa
+  title         String    // Judul amendment
+  description   String    // Deskripsi perubahan
+  changedFields Json      // Field yang diubah dan nilai lama/baru
+  effectiveDate DateTime  // Tanggal berlaku amendment
+  
+  status        MOUStatus @default(DRAFT)
+  createdAt     DateTime  @default(now())
+  createdBy     String    // User ID yang membuat amendment
+  
+  @@unique([mouId, amendmentNumber])
+}
+
+model MOUTemplate {
+  id                    String    @id @default(cuid())
+  name                  String    // Nama template
+  description           String?
+  category              String?   // Kategori template (STANDARD, PREMIUM, CUSTOM)
+  
+  // Template Content
+  titleTemplate         String
+  termsAndConditions    String    // Template T&C
+  cancellationClause    String    // Template cancellation clause
+  confidentialityClause String    // Template confidentiality
+  intellectualProperty  String    // Template IP clause
+  paymentTermsTemplate  String    // Template payment terms
+  
+  // Template Settings
+  isActive              Boolean   @default(true)
+  isDefault             Boolean   @default(false)
+  minimumBudget         Int?      // Budget minimum untuk template ini
+  applicablePlatforms   Json?     // Platform yang applicable (Instagram, TikTok, etc)
+  
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  createdBy             String    // Admin yang buat template
+}
+
 enum UserRole {
   ADMIN
   BRAND
@@ -376,4 +618,35 @@ enum MetricType {
   CAMPAIGN_END      // metrics saat campaign berakhir
   PERIODIC          // metrics rutin/tracking
   MANUAL            // manual entry
+}
+
+enum DeliverableStatus {
+  PENDING
+  IN_PROGRESS  
+  SUBMITTED
+  APPROVED
+  REJECTED
+  COMPLETED
+  OVERDUE
+}
+
+// Enums untuk MOU
+enum MOUStatus {
+  DRAFT                 // MOU sedang dibuat/draft
+  PENDING_BRAND         // Menunggu approval brand
+  PENDING_INFLUENCER    // Menunggu approval influencer  
+  PENDING_ADMIN         // Menunggu approval admin
+  APPROVED              // Sudah diapprove semua pihak
+  REJECTED              // Ditolak salah satu pihak
+  ACTIVE                // MOU aktif (campaign bisa jalan)
+  EXPIRED               // MOU expired
+  CANCELLED             // MOU dibatalkan
+  AMENDED               // Ada amendment yang pending
+}
+
+enum ApprovalStatus {
+  PENDING               // Belum diapprove
+  APPROVED              // Sudah diapprove
+  REJECTED              // Ditolak
+  NEEDS_REVISION        // Butuh revisi
 }

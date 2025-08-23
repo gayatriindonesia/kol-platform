@@ -240,25 +240,54 @@ export const getCampaignById = async (campaignId: string) => {
 
     let campaign;
 
+    // Define the common include object for campaign relations
+    const includeRelations = {
+      brands: {
+        include: {
+          user: {
+            select: {
+              name: true,
+              email: true
+            }
+          }
+        }
+      },
+      mou: {
+        select: {
+          id: true,
+          status: true,
+          brandApprovalStatus: true,
+          influencerApprovalStatus: true,
+          adminApprovalStatus: true,
+          createdAt: true,
+          mouNumber: true
+        }
+      },
+      CampaignInvitation: {
+        include: {
+          influencer: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                }
+              }
+            }
+          }
+        }
+      }
+    };
+
     if (user.role === 'ADMIN') {
       // Admin can see any campaign
       campaign = await db.campaign.findUnique({
         where: { id: campaignId },
-        include: {
-          brands: {
-            include: {
-              user: {
-                select: {
-                  name: true,
-                  email: true
-                }
-              }
-            }
-          },
-        }
+        include: includeRelations
       });
-    } else {
-      // Non-admin users (Brand) can only see their own campaigns
+    } else if (user.role === 'BRAND') {
+      // Brand users can only see their own campaigns
       const brand = await db.brand.findFirst({
         where: { userId: session.user.id }
       });
@@ -272,19 +301,31 @@ export const getCampaignById = async (campaignId: string) => {
           id: campaignId,
           brandId: brand.id
         },
-        include: {
-          brands: {
-            include: {
-              user: {
-                select: {
-                  name: true,
-                  email: true
-                }
-              }
-            }
-          },
-        }
+        include: includeRelations
       });
+    } else if (user.role === 'INFLUENCER') {
+      // Influencer can only see campaigns they're invited to
+      const influencer = await db.influencer.findUnique({
+        where: { userId: session.user.id }
+      });
+
+      if (!influencer) {
+        return { success: false, message: "Influencer not found" };
+      }
+
+      campaign = await db.campaign.findFirst({
+        where: {
+          id: campaignId,
+          CampaignInvitation: {
+            some: {
+              influencerId: influencer.id
+            }
+          }
+        },
+        include: includeRelations
+      });
+    } else {
+      return { success: false, message: "Invalid user role" };
     }
 
     if (!campaign) {
