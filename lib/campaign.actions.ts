@@ -2954,3 +2954,439 @@ export async function batchUpdateMetrics(
     };
   }
 }
+
+{/*************************** Home KOL **********************/}
+// Function untuk mengambil campaign yang diikuti influencer berdasarkan brand
+export const getCampaignsByBrandForInfluencer = async (brandId?: string) => {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return { success: false, message: "Unauthorized" };
+    }
+
+    // Cek apakah user adalah influencer
+    const user = await db.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true }
+    });
+
+    if (!user || user.role !== 'INFLUENCER') {
+      return { success: false, message: "Only influencers can access this data" };
+    }
+
+    // Dapatkan influencer record
+    const influencer = await db.influencer.findUnique({
+      where: { userId: session.user.id },
+      select: { id: true }
+    });
+
+    if (!influencer) {
+      return { success: false, message: "Influencer profile not found" };
+    }
+
+    // Build where clause
+    const whereClause: any = {
+      influencerId: influencer.id,
+      status: {
+        in: ['ACTIVE', 'COMPLETED'] // Hanya campaign yang sudah di-accept
+      }
+    };
+
+    // Jika brandId disediakan, filter berdasarkan brand
+    if (brandId) {
+      whereClause.brandId = brandId;
+    }
+
+    // Query campaign invitations dengan relasi lengkap
+    const campaignInvitations = await db.campaignInvitation.findMany({
+      where: whereClause,
+      include: {
+        campaign: {
+          include: {
+            brands: {
+              include: {
+                user: {
+                  select: {
+                    name: true,
+                    email: true,
+                    image: true
+                  }
+                }
+              }
+            }
+          }
+        },
+        brand: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true,
+                image: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    // Transform data untuk response yang lebih user-friendly
+    const campaigns = campaignInvitations.map(invitation => ({
+      // Invitation details
+      invitationId: invitation.id,
+      invitationStatus: invitation.status,
+      invitedAt: invitation.invitedAt,
+      respondedAt: invitation.respondedAt,
+      responseMessage: invitation.responseMessage,
+      
+      // Campaign details
+      campaign: {
+        id: invitation.campaign.id,
+        name: invitation.campaign.name,
+        goal: invitation.campaign.goal,
+        type: invitation.campaign.type,
+        status: invitation.campaign.status,
+        startDate: invitation.campaign.startDate,
+        endDate: invitation.campaign.endDate,
+        createdAt: invitation.campaign.createdAt,
+        updatedAt: invitation.campaign.updatedAt,
+        directData: invitation.campaign.directData,
+        selfServiceData: invitation.campaign.selfServiceData
+      },
+      
+      // Brand details
+      brand: {
+        id: invitation.brand.id,
+        name: invitation.brand.name,
+        user: invitation.brand.user
+      },
+      
+      // Additional computed fields
+      isActive: invitation.campaign.status === 'ACTIVE',
+      isCompleted: invitation.campaign.status === 'COMPLETED',
+      daysRemaining: invitation.campaign.endDate && invitation.campaign.status === 'ACTIVE' 
+        ? Math.max(0, Math.ceil((new Date(invitation.campaign.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
+        : null,
+      campaignDuration: invitation.campaign.startDate && invitation.campaign.endDate
+        ? Math.ceil((new Date(invitation.campaign.endDate).getTime() - new Date(invitation.campaign.startDate).getTime()) / (1000 * 60 * 60 * 24))
+        : null
+    }));
+
+    // Group by brand if multiple brands
+    const campaignsByBrand = campaigns.reduce((acc, campaign) => {
+      const brandId = campaign.brand.id;
+      if (!acc[brandId]) {
+        acc[brandId] = {
+          brand: campaign.brand,
+          campaigns: [],
+          totalCampaigns: 0,
+          activeCampaigns: 0,
+          completedCampaigns: 0
+        };
+      }
+      
+      acc[brandId].campaigns.push(campaign);
+      acc[brandId].totalCampaigns += 1;
+      if (campaign.isActive) acc[brandId].activeCampaigns += 1;
+      if (campaign.isCompleted) acc[brandId].completedCampaigns += 1;
+      
+      return acc;
+    }, {} as Record<string, any>);
+
+    // Statistics
+    const stats = {
+      totalCampaigns: campaigns.length,
+      activeCampaigns: campaigns.filter(c => c.isActive).length,
+      completedCampaigns: campaigns.filter(c => c.isCompleted).length,
+      totalBrands: Object.keys(campaignsByBrand).length,
+      averageCampaignDuration: campaigns
+        .filter(c => c.campaignDuration)
+        .reduce((sum, c) => sum + (c.campaignDuration || 0), 0) / campaigns.filter(c => c.campaignDuration).length || 0
+    };
+
+    return {
+      success: true,
+      data: {
+        campaigns,
+        campaignsByBrand,
+        stats
+      },
+      message: `Found ${campaigns.length} campaigns from ${stats.totalBrands} brands`
+    };
+
+  } catch (error) {
+    console.error("Error getting campaigns by brand for influencer:", error);
+    return {
+      success: false,
+      message: "Failed to get campaigns",
+      error: error instanceof Error ? error.message : "Unknown error"
+    };
+  }
+};
+
+// Function untuk mengambil campaign detail untuk influencer dari brand tertentu
+export const getCampaignDetailForInfluencer = async (campaignId: string) => {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return { success: false, message: "Unauthorized" };
+    }
+
+    // Cek apakah user adalah influencer
+    const user = await db.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true }
+    });
+
+    if (!user || user.role !== 'INFLUENCER') {
+      return { success: false, message: "Only influencers can access this data" };
+    }
+
+    // Dapatkan influencer record
+    const influencer = await db.influencer.findUnique({
+      where: { userId: session.user.id },
+      select: { id: true }
+    });
+
+    if (!influencer) {
+      return { success: false, message: "Influencer profile not found" };
+    }
+
+    // Query campaign detail dengan invitation data
+    const invitation = await db.campaignInvitation.findFirst({
+      where: {
+        campaignId,
+        influencerId: influencer.id
+      },
+      include: {
+        campaign: {
+          include: {
+            brands: {
+              include: {
+                user: {
+                  select: {
+                    name: true,
+                    email: true,
+                    image: true
+                  }
+                }
+              }
+            },
+            // Include MOU jika ada
+            mou: {
+              select: {
+                id: true,
+                status: true,
+                brandApprovalStatus: true,
+                influencerApprovalStatus: true,
+                adminApprovalStatus: true,
+                mouNumber: true,
+                createdAt: true
+              }
+            },
+            // Include semua invitations untuk melihat influencer lain
+            CampaignInvitation: {
+              where: {
+                status: {
+                  in: ['ACTIVE', 'COMPLETED']
+                }
+              },
+              include: {
+                influencer: {
+                  include: {
+                    user: {
+                      select: {
+                        name: true,
+                        image: true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        brand: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true,
+                image: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!invitation) {
+      return { success: false, message: "Campaign not found or not accessible" };
+    }
+
+    // Dapatkan metrics jika campaign sudah aktif
+    let metrics = null;
+    if (invitation.status === 'ACTIVE' || invitation.status === 'COMPLETED') {
+      const metricsResult = await getInfluencerCampaignMetrics(campaignId, influencer.id);
+      if (metricsResult.success) {
+        metrics = metricsResult.data;
+      }
+    }
+
+    // Transform response
+    const response = {
+      invitation: {
+        id: invitation.id,
+        status: invitation.status,
+        invitedAt: invitation.invitedAt,
+        respondedAt: invitation.respondedAt,
+        responseMessage: invitation.responseMessage,
+        message: invitation.message
+      },
+      campaign: {
+        id: invitation.campaign.id,
+        name: invitation.campaign.name,
+        goal: invitation.campaign.goal,
+        type: invitation.campaign.type,
+        status: invitation.campaign.status,
+        startDate: invitation.campaign.startDate,
+        endDate: invitation.campaign.endDate,
+        directData: invitation.campaign.directData,
+        selfServiceData: invitation.campaign.selfServiceData,
+        mou: invitation.campaign.mou
+      },
+      brand: invitation.brand,
+      otherInfluencers: invitation.campaign.CampaignInvitation
+        .filter(inv => inv.influencerId !== influencer.id)
+        .map(inv => ({
+          id: inv.influencer.id,
+          name: inv.influencer.user.name,
+          image: inv.influencer.user.image,
+          status: inv.status
+        })),
+      metrics,
+      canRespond: invitation.status === 'PENDING',
+      isActive: invitation.status === 'ACTIVE',
+      isCompleted: invitation.status === 'COMPLETED',
+      daysRemaining: invitation.campaign.endDate && invitation.campaign.status === 'ACTIVE' 
+        ? Math.max(0, Math.ceil((new Date(invitation.campaign.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
+        : null
+    };
+
+    return {
+      success: true,
+      data: response
+    };
+
+  } catch (error) {
+    console.error("Error getting campaign detail for influencer:", error);
+    return {
+      success: false,
+      message: "Failed to get campaign detail",
+      error: error instanceof Error ? error.message : "Unknown error"
+    };
+  }
+};
+
+// Function untuk mengambil statistik campaign influencer berdasarkan brand
+export const getInfluencerCampaignStatsByBrand = async () => {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return { success: false, message: "Unauthorized" };
+    }
+
+    // Dapatkan influencer record
+    const influencer = await db.influencer.findUnique({
+      where: { userId: session.user.id },
+      select: { id: true }
+    });
+
+    if (!influencer) {
+      return { success: false, message: "Influencer profile not found" };
+    }
+
+    // Query aggregated stats
+    const brandStats = await db.campaignInvitation.groupBy({
+      by: ['brandId', 'status'],
+      where: {
+        influencerId: influencer.id
+      },
+      _count: {
+        id: true
+      }
+    });
+
+    // Get brand details
+    const brandIds = [...new Set(brandStats.map(stat => stat.brandId))];
+    const brands = await db.brand.findMany({
+      where: {
+        id: {
+          in: brandIds
+        }
+      },
+      include: {
+        user: {
+          select: {
+            name: true,
+            image: true
+          }
+        }
+      }
+    });
+
+    // Transform data
+    const statsByBrand = brandIds.map(brandId => {
+      const brand = brands.find(b => b.id === brandId);
+      const brandStatItems = brandStats.filter(stat => stat.brandId === brandId);
+      
+      const stats = {
+        total: brandStatItems.reduce((sum, item) => sum + item._count.id, 0),
+        pending: brandStatItems.find(item => item.status === 'PENDING')?._count.id || 0,
+        active: brandStatItems.find(item => item.status === 'ACTIVE')?._count.id || 0,
+        completed: brandStatItems.find(item => item.status === 'COMPLETED')?._count.id || 0,
+        rejected: brandStatItems.find(item => item.status === 'REJECTED')?._count.id || 0
+      };
+
+      return {
+        brand: {
+          id: brandId,
+          name: brand?.name || 'Unknown Brand',
+          user: brand?.user
+        },
+        stats
+      };
+    });
+
+    // Overall stats
+    const overallStats = {
+      totalBrands: brandIds.length,
+      totalCampaigns: brandStats.reduce((sum, stat) => sum + stat._count.id, 0),
+      activeCampaigns: brandStats.filter(stat => stat.status === 'ACTIVE').reduce((sum, stat) => sum + stat._count.id, 0),
+      completedCampaigns: brandStats.filter(stat => stat.status === 'COMPLETED').reduce((sum, stat) => sum + stat._count.id, 0),
+      pendingInvitations: brandStats.filter(stat => stat.status === 'PENDING').reduce((sum, stat) => sum + stat._count.id, 0)
+    };
+
+    return {
+      success: true,
+      data: {
+        statsByBrand,
+        overallStats
+      }
+    };
+
+  } catch (error) {
+    console.error("Error getting influencer campaign stats by brand:", error);
+    return {
+      success: false,
+      message: "Failed to get campaign statistics",
+      error: error instanceof Error ? error.message : "Unknown error"
+    };
+  }
+};

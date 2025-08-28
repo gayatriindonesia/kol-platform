@@ -87,41 +87,56 @@ export default async function BrandHomePage() {
   }
 
   // Fungsi untuk menghitung trend bulanan dinamis
-  const calculateMonthlyTrend = (): MonthlyData[] => {
-    const currentDate = new Date()
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  // Fungsi untuk menghitung trend bulanan dinamis - FIXED VERSION
+const calculateMonthlyTrend = (): MonthlyData[] => {
+  const currentDate = new Date()
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  
+  // Generate 5 bulan terakhir
+  const monthlyData: MonthlyData[] = []
+  for (let i = 4; i >= 0; i--) {
+    const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1)
+    const monthName = monthNames[date.getMonth()]
+    const year = date.getFullYear()
     
-    // Generate 5 bulan terakhir
-    const monthlyData: MonthlyData[] = []
-    for (let i = 4; i >= 0; i--) {
-      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1)
-      const monthName = monthNames[date.getMonth()]
-      const year = date.getFullYear()
-      
-      // Filter brands dan campaigns berdasarkan bulan pembuatan
-      const brandsInMonth = brands.filter(brand => {
-        const brandDate = new Date(brand.createdAt || brand.created_at || '')
-        return brandDate.getMonth() === date.getMonth() && brandDate.getFullYear() === year
-      }).length
+    // Filter brands dan campaigns berdasarkan bulan pembuatan
+    const brandsInMonth = brands.filter(brand => {
+      const brandDate = new Date(brand.createdAt || brand.created_at || '')
+      return brandDate.getMonth() === date.getMonth() && brandDate.getFullYear() === year
+    }).length
 
-      const campaignsInMonth = campaigns.filter(campaign => {
-        const campaignDate = new Date(campaign.createdAt || campaign.created_at || '')
-        return campaignDate.getMonth() === date.getMonth() && campaignDate.getFullYear() === year
-      }).length
+    const campaignsInMonth = campaigns.filter(campaign => {
+      const campaignDate = new Date(campaign.createdAt || campaign.created_at || '')
+      return campaignDate.getMonth() === date.getMonth() && campaignDate.getFullYear() === year
+    }).length
 
-      // Jika tidak ada data createdAt, gunakan distribusi kumulatif
-      const cumulativeBrands = brandsInMonth > 0 ? brandsInMonth : Math.max(1, Math.floor(brandsCount * (0.6 + (4-i) * 0.1)))
-      const cumulativeCampaigns = campaignsInMonth > 0 ? campaignsInMonth : Math.max(1, Math.floor(campaignsCount * (0.6 + (4-i) * 0.1)))
+    // FIXED: Only use fallback if we have actual data but no creation dates
+    // If no data exists for that month, show 0 instead of artificial minimum
+    let finalBrands = brandsInMonth
+    let finalCampaigns = campaignsInMonth
 
-      monthlyData.push({
-        month: monthName,
-        brands: cumulativeBrands,
-        campaigns: cumulativeCampaigns
-      })
+    // Only use fallback distribution if:
+    // 1. We have total brands/campaigns but no monthly data (missing createdAt)
+    // 2. AND we're looking at recent months where data should exist
+    const hasValidCreationDates = brands.some(b => b.createdAt || b.created_at) || 
+                                 campaigns.some(c => c.createdAt || c.created_at)
+
+    if (!hasValidCreationDates && (brandsCount > 0 || campaignsCount > 0)) {
+      // Only use fallback if no creation dates exist at all
+      // Remove Math.max(1, ...) to allow 0 values
+      finalBrands = Math.floor(brandsCount * (0.6 + (4-i) * 0.1))
+      finalCampaigns = Math.floor(campaignsCount * (0.6 + (4-i) * 0.1))
     }
 
-    return monthlyData
+    monthlyData.push({
+      month: monthName,
+      brands: finalBrands,
+      campaigns: finalCampaigns
+    })
   }
+
+  return monthlyData
+}
 
   // Fungsi untuk menghitung persentase pertumbuhan
   const calculateGrowthRate = (): number => {
@@ -172,7 +187,7 @@ export default async function BrandHomePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
+      <div className="space-y-8">
         {/* Header */}
         <div className="text-center md:text-left">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">

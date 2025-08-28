@@ -12,6 +12,7 @@ import {
   MdDevices,
   MdList,
   MdAdd,
+  MdNote,
 } from 'react-icons/md'
 
 export interface NavigationItem {
@@ -53,6 +54,11 @@ export const adminNavigationItems: NavigationItem[] = [
         icon: MdCampaign,
       },
     ],
+  },
+  {
+    name: "Management MOU",
+    path: '/admin/mou',
+    icon: MdNote,
   },
   {
     name: 'Influencers',
@@ -119,6 +125,11 @@ export const brandNavigationItems: NavigationItem[] = [
     ],
   },
   {
+    name: "Management MOU",
+    path: '/brand/mou',
+    icon: MdNote,
+  },
+  {
     name: 'Reports Bug',
     path: '/brand/reports',
     icon: MdReport,
@@ -140,6 +151,11 @@ export const kolNavigationItems: NavigationItem[] = [
     name: 'Campaign',
     path: '/kol/campaigns',
     icon: MdCampaign,
+  },
+  {
+    name: "Management MOU",
+    path: '/kol/mou',
+    icon: MdNote,
   },
   {
     name: 'Platform',

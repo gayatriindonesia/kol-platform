@@ -240,7 +240,7 @@ const InfluencerDashboardInvitations = ({ initialInvitations, influencerId }: Pr
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Header Section */}
       <div className="bg-white/80 backdrop-blur-lg border-b border-white/20">
-        <div className="max-w-7xl mx-auto px-6 py-6">
+        <div className="px-6 py-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
               <div className="flex items-center gap-3 mb-2">
@@ -326,7 +326,7 @@ const InfluencerDashboardInvitations = ({ initialInvitations, influencerId }: Pr
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="px-6 py-8">
         {/* Tabs */}
         <div className="bg-white/90 backdrop-blur-lg rounded-2xl shadow-xl border border-white/20 mb-8">
           <div className="p-2">

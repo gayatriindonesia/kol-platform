@@ -1,12 +1,13 @@
 {
   "compilerOptions": {
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "target": "es2020",                          // ✅ wajib, biar Set/Map, async/await dll aman
+    "lib": ["dom", "dom.iterable", "esnext"],    // ✅ support browser + fitur modern
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
-    "module": "CommonJS",
+    "module": "esnext",                          // ✅ Next.js butuh ESM
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,

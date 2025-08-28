@@ -305,26 +305,26 @@ export default function MOUManagementDashboard() {
   };
 
   return (
-    <div className="bg-gray-50">
+    <div className="min-h-screen w-full bg-gray-50 flex flex-col">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">MOU Management</h1>
               <p className="text-gray-500">Manage campaign memorandums of understanding</p>
             </div>
-            {/** Title Pojok Kanan
+            {/** Title Pojok Kanan */}
             <div className="flex space-x-4">
-              Empty Title
+              tes
             </div>
-             */}
           </div>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* Content */}
+      <div className="flex-1 px-4 sm:px-6 lg:px-8 py-6">
+        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <StatsCard title="Total MOUs" value={total} icon={FileText} color="blue" />
           <StatsCard title="Pending Approval" value={pending} icon={Clock} color="yellow" />
@@ -343,8 +343,8 @@ export default function MOUManagementDashboard() {
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex items-center py-4 px-1 border-b-2 font-medium text-sm ${activeTab === tab.id
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                        ? "border-blue-500 text-blue-600"
+                        : "border-transparent text-gray-500 hover:text-gray-700"
                       }`}
                   >
                     <Icon className="w-4 h-4 mr-2" />
@@ -358,9 +358,9 @@ export default function MOUManagementDashboard() {
 
         {/* Tab Content */}
         <div className="bg-white rounded-lg shadow-sm">
-          {activeTab === 'overview' && <OverviewTab />}
-          {activeTab === 'pending-requests' && <PendingRequestsTab />}
-          {activeTab === 'all-mous' && (
+          {activeTab === "overview" && <OverviewTab />}
+          {activeTab === "pending-requests" && <PendingRequestsTab />}
+          {activeTab === "all-mous" && (
             <AllMOUsTab
               selectedMOUs={selectedMOUs}
               onBulkSelect={handleBulkSelect}
@@ -368,8 +368,8 @@ export default function MOUManagementDashboard() {
               setShowBulkActions={setShowBulkActions}
             />
           )}
-          {activeTab === 'create-mou' && <CreateMOUTab onSuccess={refreshData} />}
-          {activeTab === 'mou-approve' && <MOUApprovalTab onRefresh={refreshData} />}
+          {activeTab === "create-mou" && <CreateMOUTab onSuccess={refreshData} />}
+          {activeTab === "mou-approve" && <MOUApprovalTab onRefresh={refreshData} />}
         </div>
       </div>
 
@@ -1022,7 +1022,7 @@ function CreateMOUTab({ onSuccess }: { onSuccess?: () => void }) {
 
   return (
     <div className="p-6">
-      <div className="max-w-4xl mx-auto">
+      <div>
         <div className="mb-8">
           <h3 className="text-2xl font-bold text-gray-900 mb-2">Buat MOU Baru</h3>
           <p className="text-gray-600">Buatlah MOU kesepakatan untuk sebuah Campaign</p>
@@ -1070,7 +1070,7 @@ function CreateMOUTab({ onSuccess }: { onSuccess?: () => void }) {
                   ))
                 )}
               </select>
-              
+
               {/* Loading Spinner */}
               {isLoadingCampaigns && (
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -1078,7 +1078,7 @@ function CreateMOUTab({ onSuccess }: { onSuccess?: () => void }) {
                 </div>
               )}
             </div>
-            
+
             {/* Helper Text */}
             {isLoadingCampaigns ? (
               <p className="text-sm text-blue-600 mt-2 flex items-center">
@@ -1341,7 +1341,7 @@ function MOUApprovalRow({ mou, isSelected, onSelect, onViewDetails, onApprove }:
 
   const handleApprove = async (role: "BRAND" | "INFLUENCER") => {
     if (isApproving) return;
-    
+
     setIsApproving(true);
     try {
       await onApprove(role);
@@ -1392,12 +1392,12 @@ function MOUApprovalRow({ mou, isSelected, onSelect, onViewDetails, onApprove }:
           >
             <Eye className="w-4 h-4" />
           </button>
-          
+
           {/* Brand Approve Button */}
           {mou.brandApprovalStatus === 'PENDING' && (
-            <button 
+            <button
               onClick={() => handleApprove("BRAND")}
-              className="text-green-600 hover:text-green-900 disabled:opacity-50" 
+              className="text-green-600 hover:text-green-900 disabled:opacity-50"
               title="Approve as Brand"
               disabled={isApproving}
             >
@@ -1408,12 +1408,12 @@ function MOUApprovalRow({ mou, isSelected, onSelect, onViewDetails, onApprove }:
               )}
             </button>
           )}
-          
+
           {/* Influencer Approve Button */}
           {mou.influencerApprovalStatus === 'PENDING' && (
-            <button 
+            <button
               onClick={() => handleApprove("INFLUENCER")}
-              className="text-green-600 hover:text-green-900 disabled:opacity-50" 
+              className="text-green-600 hover:text-green-900 disabled:opacity-50"
               title="Approve as Influencer"
               disabled={isApproving}
             >
@@ -1424,7 +1424,7 @@ function MOUApprovalRow({ mou, isSelected, onSelect, onViewDetails, onApprove }:
               )}
             </button>
           )}
-          
+
           <button className="text-red-600 hover:text-red-900" title="Quick Reject" disabled={isApproving}>
             <XCircle className="w-4 h-4" />
           </button>
@@ -1501,16 +1501,16 @@ function MOUApprovalTab({ onRefresh }: { onRefresh?: () => void }) {
   const handleApprove = async (mouId: string, approvalType: "BRAND" | "INFLUENCER") => {
     try {
       console.log('Attempting to approve MOU:', mouId, 'as', approvalType);
-      
+
       const res = await approveMOU(mouId, approvalType);
       console.log('Approval response:', res);
-      
+
       if (res.success && res.data) {
         // Optimistic update
         setMous((prev) =>
           prev.map((m) => {
             if (m.id !== mouId) return m;
-            
+
             const updated = { ...m };
             if (approvalType === "BRAND") {
               updated.brandApprovalStatus = "APPROVED";

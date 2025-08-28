@@ -184,7 +184,7 @@ const MOURequestComponent: React.FC<MOURequestComponentProps> = ({
     return (
       <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-300">
         <AlertTriangle className="w-3 h-3 mr-1" />
-        No MOU
+        Tidak ada MOU
       </Badge>
     );
   };
@@ -199,12 +199,12 @@ const MOURequestComponent: React.FC<MOURequestComponentProps> = ({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FileText className="w-5 h-5" />
-          MOU Status
+          Ajukan Jika Campaign Membutuhkan MOU
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between">
-          <span className="text-sm text-gray-600">Current Status:</span>
+          <span className="text-sm text-gray-600">Status:</span>
           {getMOUStatusBadge()}
         </div>
 
@@ -219,7 +219,7 @@ const MOURequestComponent: React.FC<MOURequestComponentProps> = ({
 
         {relevantInvitation?.mouCreationRequested && relevantInvitation?.mouCreatedAt && (
           <div className="text-sm text-gray-600">
-            <p>MOU requested on: {new Date(relevantInvitation.mouCreatedAt).toLocaleDateString()}</p>
+            <p>Tanggal Di Ajukan: {new Date(relevantInvitation.mouCreatedAt).toLocaleDateString()}</p>
           </div>
         )}
 
@@ -228,19 +228,19 @@ const MOURequestComponent: React.FC<MOURequestComponentProps> = ({
             <DialogTrigger asChild>
               <Button className="w-full">
                 <Send className="w-4 h-4 mr-2" />
-                Request MOU Creation
+                Ajukan Pembuatan MOU
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>Request MOU Creation</DialogTitle>
+                <DialogTitle>Ajukan Pembuatan MOU</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="message">Message (Optional)</Label>
+                  <Label htmlFor="message">Pesan (Optional)</Label>
                   <Textarea
                     id="message"
-                    placeholder="Add any specific requirements or notes for the MOU..."
+                    placeholder="Tambahkan persyaratan atau catatan khusus untuk MOU..."
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     className="mt-1"
@@ -264,8 +264,7 @@ const MOURequestComponent: React.FC<MOURequestComponentProps> = ({
                 <Alert>
                   <AlertTriangle className="h-4 w-4" />
                   <AlertDescription>
-                    This will notify the admin to create an MOU for this campaign. 
-                    Both parties will need to sign the MOU once it&apos;s created.
+                    Ini akan memberi tahu admin untuk membuat Nota Kesepahaman (MOU) untuk Campaign ini. Kedua belah pihak harus menandatangani MOU setelah dibuat.
                   </AlertDescription>
                 </Alert>
 
@@ -278,12 +277,12 @@ const MOURequestComponent: React.FC<MOURequestComponentProps> = ({
                     {isLoading ? (
                       <>
                         <Clock className="w-4 h-4 mr-2 animate-spin" />
-                        Requesting...
+                        Pengajuan...
                       </>
                     ) : (
                       <>
                         <Send className="w-4 h-4 mr-2" />
-                        Request MOU
+                        Ajukan MOU
                       </>
                     )}
                   </Button>
@@ -292,7 +291,7 @@ const MOURequestComponent: React.FC<MOURequestComponentProps> = ({
                     onClick={() => setIsDialogOpen(false)}
                     disabled={isLoading}
                   >
-                    Cancel
+                    Batal
                   </Button>
                 </div>
               </div>

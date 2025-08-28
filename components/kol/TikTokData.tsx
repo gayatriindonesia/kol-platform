@@ -19,6 +19,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import ConnectTikTokButton from "./ConnectTikTokButton";
+import Image from "next/image";
 
 interface TikTokDataProps {
   connections: (InfluencerPlatform & {
@@ -241,10 +242,12 @@ export default function TikTokData({ connections: initialConnections }: TikTokDa
           <div key={connection.id} className="border rounded-lg p-4">
             <div className="flex items-center gap-3 mb-4">
               {platformData?.avatarUrl ? (
-                <img
+                <Image
                   src={platformData.avatarUrl}
                   alt="Avatar"
                   className="h-12 w-12 rounded-full object-cover border"
+                  width={1000}
+                  height={1000}
                 />
               ) : (
                 <div className="h-12 w-12 bg-black rounded-full flex items-center justify-center">

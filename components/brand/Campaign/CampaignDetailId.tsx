@@ -119,12 +119,12 @@ const CampaignDetailId: React.FC<CampaignDetailIdProps> = ({ campaign }) => {
 
   return (
     <div className="bg-gray-50 p-4 md:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
+      <div className="space-y-8">
         {/* Header */}
         <div className="mb-8">
           <Button variant="outline" size="sm" className="mb-4" onClick={() => router.back()}>
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Kembali ke Daftar Campaign
+            Kembali
           </Button>
           <div className="flex justify-between items-start">
             <div>

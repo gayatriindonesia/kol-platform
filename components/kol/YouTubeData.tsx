@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { FaYoutube } from 'react-icons/fa';
 import { InfluencerPlatform } from '@prisma/client';
+import Image from 'next/image';
 
 // Tipe untuk platformData JSON
 type YouTubePlatformData = {
@@ -25,10 +26,12 @@ export default function YouTubeData({ connection }: YouTubeDataProps) {
     <div className="border rounded-lg p-4 space-y-4">
       <div className="flex items-center gap-4">
         {platformData?.thumbnailUrl ? (
-          <img
+          <Image
             src={platformData.thumbnailUrl}
             alt={`Thumbnail of ${data.username}`}
             className="h-12 w-12 rounded-full object-cover"
+            width={1000}
+            height={1000}
           />
         ) : (
           <div className="h-12 w-12 bg-red-600 rounded-full flex items-center justify-center">

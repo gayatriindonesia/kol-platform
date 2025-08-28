@@ -130,7 +130,7 @@ const ErrorFallback = ({
     showBackButton?: boolean;
 }) => (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="px-4 py-8 max-w-4xl">
             <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
                 <CardContent className="p-8 text-center">
                     <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
@@ -153,7 +153,7 @@ const ErrorFallback = ({
 // Loading component
 const LoadingFallback = () => (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="px-4 py-8 max-w-6xl">
             <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm mb-6">
                 <CardContent className="p-8">
                     <div className="flex items-center justify-between mb-6">
@@ -326,27 +326,28 @@ const CampaignDetailPage = async ({ params }: CampaignDetailPageProps) => {
         campaign = await handleCampaignExpiryCheck(campaign);
 
         const showMOUComponent = (
-            user.role === 'BRAND' || 
-            user.role === 'INFLUENCER' || 
+            user.role === 'BRAND' ||
+            user.role === 'INFLUENCER' ||
             user.role === 'ADMIN'
         ) && campaign.status === 'ACTIVE';
 
         // Render success state
         return (
-            <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+            <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
                 <Suspense fallback={<LoadingFallback />}>
-                    <div>
+                    {/* Campaign Detail */}
+                    <div className="container mx-auto px-4 py-6">
                         <CampaignDetailId campaign={campaign} />
                     </div>
 
                     {/* MOU Request Section */}
                     {showMOUComponent && campaign.mouRequired && (
-                        <div className="container mx-auto px-4 py-6 max-w-6xl">
+                        <div className="container mx-auto px-4 py-8">
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                {/* Left: MOU Details */}
                                 <div className="lg:col-span-2">
-                                    {/* MOU Details Display */}
                                     {campaign.mou && (
-                                        <Card className="mb-6">
+                                        <Card className="shadow-sm">
                                             <CardContent className="p-6">
                                                 <h3 className="text-lg font-semibold mb-4">MOU Information</h3>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -372,17 +373,21 @@ const CampaignDetailPage = async ({ params }: CampaignDetailPageProps) => {
                                                     </div>
                                                     <div>
                                                         <span className="font-medium">Created:</span>
-                                                        <p className="text-gray-600">{new Date(campaign.mou.createdAt).toLocaleDateString()}</p>
+                                                        <p className="text-gray-600">
+                                                            {new Date(campaign.mou.createdAt).toLocaleDateString()}
+                                                        </p>
                                                     </div>
                                                 </div>
                                             </CardContent>
                                         </Card>
                                     )}
                                 </div>
+
+                                {/* Right: MOU Request Action */}
                                 <div className="lg:col-span-1">
                                     <MOURequestComponent
                                         campaign={campaign}
-                                        userRole={user.role as 'BRAND' | 'INFLUENCER' | 'ADMIN'}
+                                        userRole={user.role as "BRAND" | "INFLUENCER" | "ADMIN"}
                                         userId={session.user.id}
                                     />
                                 </div>
@@ -390,26 +395,29 @@ const CampaignDetailPage = async ({ params }: CampaignDetailPageProps) => {
                         </div>
                     )}
 
-                    <div className="w-full px-4 py-8">
+                    {/* Influencers Section */}
+                    <div className="container mx-auto px-4 py-8">
                         <section aria-label="Campaign Influencers">
                             <CampaignListInfluencer campaignId={campaign.id} />
                         </section>
                     </div>
-
                 </Suspense>
 
                 {/* Status indicator for expired campaigns */}
-                {campaign.status === 'COMPLETED' && campaign.endDate && isCampaignExpired(campaign.endDate) && (
-                    <div className="fixed bottom-4 right-4 z-50">
-                        <Alert className="w-auto bg-yellow-50 border-yellow-200">
-                            <Clock className="h-4 w-4" />
-                            <AlertDescription className="text-yellow-800">
-                                Campaign telah berakhir dan statusnya telah diperbarui
-                            </AlertDescription>
-                        </Alert>
-                    </div>
-                )}
-            </main>
+                {campaign.status === "COMPLETED" &&
+                    campaign.endDate &&
+                    isCampaignExpired(campaign.endDate) && (
+                        <div className="fixed bottom-4 right-4 z-50">
+                            <Alert className="w-auto max-w-sm bg-yellow-50 border-yellow-200 shadow-md rounded-lg">
+                                <Clock className="h-4 w-4 shrink-0" />
+                                <AlertDescription className="text-yellow-800">
+                                    Campaign telah berakhir dan statusnya telah diperbarui
+                                </AlertDescription>
+                            </Alert>
+                        </div>
+                    )}
+            </div>
+
         );
 
     } catch (error) {

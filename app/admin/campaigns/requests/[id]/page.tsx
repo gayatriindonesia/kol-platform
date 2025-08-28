@@ -229,7 +229,7 @@ export default function CampaignDetailPage() {
           <div className="p-6 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-2xl font-bold text-slate-900">Pencarian Influencers</h3>
+                <h3 className="text-2xl font-bold text-slate-900">Pencarian Influencer</h3>
                 <p className="text-slate-600 mt-1">Pilih influencer yang sesuai dengan tujuan Campaign</p>
               </div>
               <button
@@ -246,7 +246,7 @@ export default function CampaignDetailPage() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Search influencers..."
+                  placeholder="Cari influencer..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -257,7 +257,7 @@ export default function CampaignDetailPage() {
                 onChange={(e) => setFilterCategory(e.target.value)}
                 className="px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="all">All Categories</option>
+                <option value="all">Semua Kategori</option>
                 <option value="lifestyle">Lifestyle</option>
                 <option value="tech">Technology</option>
                 <option value="fashion">Fashion</option>
@@ -270,14 +270,14 @@ export default function CampaignDetailPage() {
             {/* Selected Count */}
             <div className="flex items-center justify-between mt-4 p-3 bg-white rounded-lg border border-blue-200">
               <span className="text-sm text-slate-600">
-                {selectedInfluencers.length} influencer(s) selected
+                {selectedInfluencers.length} influencer terpilih
               </span>
               {selectedInfluencers.length > 0 && (
                 <button
                   onClick={() => setSelectedInfluencers([])}
                   className="text-sm text-blue-600 hover:text-blue-800 font-medium"
                 >
-                  Clear All
+                  Hapus Semua
                 </button>
               )}
             </div>
@@ -358,14 +358,14 @@ export default function CampaignDetailPage() {
           <div className="p-6 bg-slate-50 border-t border-slate-200">
             <div className="flex items-center justify-between">
               <p className="text-sm text-slate-600">
-                Selected {selectedInfluencers.length} of {filteredInfluencers.length} influencers
+                Terpilih {selectedInfluencers.length} of {filteredInfluencers.length} influencer
               </p>
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowInfluencerModal(false)}
                   className="px-6 py-3 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
                 >
-                  Cancel
+                  Batal
                 </button>
                 <button
                   onClick={handleApprove}
@@ -377,7 +377,7 @@ export default function CampaignDetailPage() {
                   ) : (
                     <UserCheck className="w-4 h-4" />
                   )}
-                  Approve with Selected Influencers
+                  Simpan Pemilihan
                 </button>
               </div>
             </div>
@@ -396,8 +396,8 @@ export default function CampaignDetailPage() {
             <div className="absolute top-0 left-0 w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
           </div>
           <div className="text-center">
-            <h3 className="text-lg font-semibold text-slate-900">Loading Campaign</h3>
-            <p className="text-slate-600">Please wait while we fetch the details...</p>
+            <h3 className="text-lg font-semibold text-slate-900">Memproses Campaign</h3>
+            <p className="text-slate-600">Harap tunggu sementara kami mengambil datanya...</p>
           </div>
         </div>
       </div>
@@ -420,7 +420,7 @@ export default function CampaignDetailPage() {
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
       <div className="bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-6 py-6">
+        <div className="px-6 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
@@ -428,12 +428,12 @@ export default function CampaignDetailPage() {
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-all duration-200"
               >
                 <ArrowLeft className="w-4 h-4" />
-                Back to Campaigns
+                Kembali
               </button>
               <div className="h-6 w-px bg-slate-300" />
               <div>
-                <h1 className="text-2xl font-bold text-slate-900">Campaign Review</h1>
-                <p className="text-sm text-slate-600">Manage campaign approval and details</p>
+                <h1 className="text-2xl font-bold text-slate-900">Peninjauan Campaign</h1>
+                <p className="text-sm text-slate-600">Kelola persetujuan dan detail Campaign</p>
               </div>
             </div>
 
@@ -452,7 +452,7 @@ export default function CampaignDetailPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="px-6 py-8">
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
@@ -745,7 +745,7 @@ export default function CampaignDetailPage() {
             {/* Brand Information */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200">
               <div className="p-6">
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">Brand Information</h3>
+                <h3 className="text-lg font-semibold text-slate-900 mb-4">Informasi Brand</h3>
                 <div className="space-y-4">
                   <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg">
                     <div className="p-2 bg-blue-100 rounded-lg">
@@ -782,7 +782,7 @@ export default function CampaignDetailPage() {
                       <Building2 className="w-5 h-5 text-purple-600" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm text-slate-600">Brand Name</p>
+                      <p className="text-sm text-slate-600">Nama Brand</p>
                       <p className="font-medium text-slate-900">{campaign.brands?.name || 'Not available'}</p>
                     </div>
                   </div>
@@ -794,7 +794,6 @@ export default function CampaignDetailPage() {
             {campaign.status === 'PENDING' && (
               <div className="bg-white rounded-xl shadow-sm border border-slate-200">
                 <div className="p-6">
-                  <h3 className="text-lg font-semibold text-slate-900 mb-4">Review Actions</h3>
                   <div className="space-y-3">
                     <button
                       onClick={handleOpenInfluencerModal}
@@ -802,7 +801,7 @@ export default function CampaignDetailPage() {
                       className="w-full flex items-center justify-center gap-3 px-6 py-3 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
                     >
                       <UserCheck className="w-4 h-4" />
-                      Select Influencers & Approve
+                      Terima Pengajuan & Lanjutkan
                     </button>
 
                     <button
@@ -815,7 +814,7 @@ export default function CampaignDetailPage() {
                       ) : (
                         <XCircle className="w-4 h-4" />
                       )}
-                      Reject Campaign
+                      Tolak Campaign
                     </button>
                   </div>
 
@@ -823,9 +822,9 @@ export default function CampaignDetailPage() {
                     <div className="flex gap-3">
                       <Eye className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                       <div>
-                        <p className="text-sm font-medium text-amber-800">Review Guidelines</p>
+                        <p className="text-sm font-medium text-amber-800">Panduan Peninjauan</p>
                         <p className="text-xs text-amber-700 mt-1">
-                          Please carefully review all campaign details before taking any action. Approved campaigns will be immediately visible to influencers.
+                          Harap tinjau semua detail kampanye dengan saksama sebelum mengambil tindakan apa pun. Kampanye yang disetujui akan langsung terlihat oleh influencer.
                         </p>
                       </div>
                     </div>
@@ -845,7 +844,7 @@ export default function CampaignDetailPage() {
                       <div>
                         <p className="font-medium">Campaign {campaign.status}</p>
                         <p className="text-sm opacity-75 mt-1">
-                          {campaign.status === 'ACTIVE' ? 'This campaign is now live and visible to influencers.' : 'This campaign has been rejected and is not visible.'}
+                          {campaign.status === 'ACTIVE' ? 'Campaign ini sekarang sudah aktif dan dapat dilihat oleh para influencer.' : 'Campaign ini telah ditolak dan tidak terlihat.'}
                         </p>
                       </div>
                     </div>

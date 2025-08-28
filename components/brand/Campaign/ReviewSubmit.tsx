@@ -8,6 +8,7 @@ import { id } from "date-fns/locale";
 import { BadgeCheck, Users, Target, MessageSquare, User } from "lucide-react";
 import { Accordion } from "@radix-ui/react-accordion";
 import { AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import Image from "next/image";
 
 const ReviewSubmit = () => {
   const {
@@ -118,10 +119,12 @@ const ReviewSubmit = () => {
                       <div className="flex items-start gap-4">
                         {/* Avatar */}
                         <div className="w-20 h-20 flex-shrink-0 overflow-hidden rounded-full border">
-                          <img
+                          <Image
                             src={influencer.image || "https://ui-avatars.com/api/?name=User"}
                             alt={influencer.influencerName}
                             className="w-full h-full object-cover"
+                            width={1000}
+                            height={1000}
                           />
                         </div>
 

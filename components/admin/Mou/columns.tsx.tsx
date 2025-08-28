@@ -335,25 +335,25 @@ export const createAdminColumns = (
       },
     },
     {
-  id: "approvals",
-  header: "Approvals",
-  cell: ({ row }) => (
-    <div className="flex flex-col gap-0.5 text-[11px]">
-      <div className="flex items-center justify-between">
-        <span className="text-gray-600">Brand</span>
-        {getApprovalStatusBadge(row.original.brandApprovalStatus)}
-      </div>
-      <div className="flex items-center justify-between">
-        <span className="text-gray-600">Influencer</span>
-        {getApprovalStatusBadge(row.original.influencerApprovalStatus)}
-      </div>
-      <div className="flex items-center justify-between">
-        <span className="text-gray-600">Admin</span>
-        {getApprovalStatusBadge(row.original.adminApprovalStatus)}
-      </div>
-    </div>
-  ),
-},
+      id: "approvals",
+      header: "Approvals",
+      cell: ({ row }) => (
+        <div className="flex flex-col gap-0.5 text-[11px]">
+          <div className="flex items-center justify-between">
+            <span className="text-gray-600">Brand</span>
+            {getApprovalStatusBadge(row.original.brandApprovalStatus)}
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-gray-600">Influencer</span>
+            {getApprovalStatusBadge(row.original.influencerApprovalStatus)}
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-gray-600">Admin</span>
+            {getApprovalStatusBadge(row.original.adminApprovalStatus)}
+          </div>
+        </div>
+      ),
+    },
     {
       accessorKey: "createdAt",
       header: "Created",

@@ -385,7 +385,7 @@ export default function InfluencerPageById({ id }: Props) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="px-4 py-8 max-w-7xl">
         {/* Back Button */}
         <div className="mb-6">
           <Button variant="outline" size="sm" className="mb-4" onClick={() => router.back()}>
@@ -490,7 +490,7 @@ export default function InfluencerPageById({ id }: Props) {
           </CardContent>
         </Card>
 
-{/* Platform Stats */}
+        {/* Platform Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="border-0 shadow-lg bg-gradient-to-r from-pink-500 to-purple-600 text-white">
             <CardContent className="p-6">

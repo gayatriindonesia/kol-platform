@@ -79,16 +79,16 @@ export default function RoleSelectionForm({ user }: RoleSelectionFormProps) {
             icon: Building2,
             gradient: "from-blue-500 to-purple-600",
             hoverGradient: "from-blue-600 to-purple-700",
-            features: ["Access brand dashboard", "Find influencers", "Manage campaigns"]
+            features: ["Access brand dashboard", "Pencarian influencers", "Management campaign"]
         },
         {
             id: "INFLUENCER",
-            title: "Content Creator",
-            description: "Saya membuat konten dan ingin berkolaborasi dengan brands",
+            title: "INFLUENCER",
+            description: "Saya membuat konten dan ingin berkolaborasi dengan brand",
             icon: Users,
             gradient: "from-pink-500 to-orange-500",
             hoverGradient: "from-pink-600 to-orange-600",
-            features: ["Creator dashboard", "Brand opportunities", "Analytics & insights"]
+            features: ["Cek Rate Card", "Berkolaborasi Dalam Campaign", "Analytics & insights"]
         }
     ];
 
@@ -224,7 +224,7 @@ export default function RoleSelectionForm({ user }: RoleSelectionFormProps) {
                                 <CheckCircle2 className="w-5 h-5" />
                             )}
                             <span>
-                                {isPending ? "Setting up your account..." : "Continue to Dashboard"}
+                                {isPending ? "Menyiapkan akun Anda..." : "Lanjut ke Dashboard"}
                             </span>
                         </div>
                         
@@ -239,7 +239,7 @@ export default function RoleSelectionForm({ user }: RoleSelectionFormProps) {
             {/* Bottom Info */}
             <div className="text-center mt-12 pt-8 border-t border-gray-100">
                 <p className="text-sm text-gray-500">
-                    Need help deciding? You can always change your role later in your account settings.
+                    Butuh bantuan untuk memutuskan? Anda selalu dapat mengubah peran Anda nanti di pengaturan akun.
                 </p>
             </div>
         </div>
